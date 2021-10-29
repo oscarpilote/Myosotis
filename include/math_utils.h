@@ -1,3 +1,6 @@
+#ifndef _MATH_UTILS_H
+#define _MATH_UTILS_H
+
 
 #define PI 		3.14159265358979323846
 #define SQRT2 		1.41421356237309504880
@@ -21,3 +24,4 @@ bool approx_equal(T a, T b)
 	return (scal * a - scal * b) == 0;
 }
 
+#endif /* _MATH_UTILS_H */

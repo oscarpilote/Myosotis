@@ -1,3 +1,6 @@
+#ifndef _VEC3_H
+#define _VEC3_H
+
 #include <assert.h>
 #include <cmath>
 
@@ -8,6 +11,7 @@ struct Vec3 {
 	T z;
 
 	/* Constructors */
+	Vec3() {}; 
 	Vec3(T x, T y, T z);
 
 	/* Index Accessor */
@@ -86,3 +90,5 @@ Vec3<T> Vec3<T>::cross(const Vec3<T>& V) const
 		z * V.x - x * V.z,
 		x * V.y - y * V.x};
 }
+
+#endif /* _VEC3_H */

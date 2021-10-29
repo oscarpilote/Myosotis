@@ -1,3 +1,6 @@
+#ifndef _QUAT_H
+#define _QUAT_H
+
 #include <assert.h>
 
 #include "math_utils.h"
@@ -9,6 +12,7 @@ struct alignas(4 * sizeof(T)) Quat {
 	Vec3<T> V;
 
 	/* Constructors */
+	Quat() {};
 	Quat(T r, Vec3<T> V);
 
 	/* Norm */
@@ -81,4 +85,6 @@ Quat<T> great_circle_rotation(const Vec3<T>& from, const Vec3<T>& to)
 	
 	return {r, V};
 }
+
+#endif /* _QUAT_H */
 

@@ -1,3 +1,8 @@
+#ifndef _CAMERA_H
+#define _CAMERA_H
+
+#include <math.h>
+
 #include "vec3.h"
 #include "quat.h"
 #include "mat4.h"
@@ -41,8 +46,10 @@ private:
 	
 public:
 	/* Constructor */
+	Camera() {};
 	Camera(float sensor_width, float sensor_height, float lense_fov); 
-	
+	void init(float sensor_width, float sensor_height, float lense_fov);
+
 	/* Accessors */
 	float width() const;
 	float height() const;
@@ -54,7 +61,7 @@ public:
 
 
 	/* Modifiers   */
-	Camera& resize_sensor(float width, float height, bool keep_const_fov);
+	Camera& resize_sensor(float width, float height, bool keep_const_fov = true);
 	Camera& set_lense_fov(float deg /* horizontal fov */);
 	Camera& set_lense_focal(float length);
 	Camera& set_lense_shift(float x, float y);
@@ -78,3 +85,38 @@ public:
 	Mat4<T> proj_view_matrix() const;
 };
 
+template <typename T>
+void Camera<T>::update_params()
+{
+
+}
+
+template <typename T>
+void Camera<T>::init(float sensor_width, float sensor_height, float lense_fov)
+{
+	this->sensor_width = sensor_width;
+	this->sensor_height = sensor_height;
+	this->focal_length = sensor_width / (2 * tan(lense_fov / 2)); 
+}
+
+template <typename T>
+Camera<T>& Camera<T>::resize_sensor(float width, float height, bool keep_const_fov)
+{
+	sensor_width = width;
+	sensor_height = height;
+	
+	if (keep_const_fov)
+	{
+		/* TODO */
+	}
+
+	update_params();
+
+	return *this;
+}
+
+
+
+
+
+#endif /* _CAMERA_H */
