@@ -40,6 +40,9 @@ struct Frustum {
  *
  *	shift_x = (r+l)/(r-l),
  *	shift_y = (t+b)/(t-b).
+ *
+ * An additional option for (non physical) orthographic camera frustum
+ * is added. In that case aspects and shifts have a to be reinterpreted. 
  */  
 struct CameraFrustum {
 	
