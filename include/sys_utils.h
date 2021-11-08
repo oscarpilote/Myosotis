@@ -1,5 +1,4 @@
-#ifndef _SYS_UTILS_H
-#define _SYS_UTILS_H
+#pragma once
 
 /* C++ does not allow implicitit cast of void*   */
 /* This will work with gcc or clang              */
@@ -29,6 +28,3 @@
 #ifdef near
 #undef near
 #endif
-
-#endif
-

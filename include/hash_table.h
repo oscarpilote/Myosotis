@@ -1,3 +1,5 @@
+#pragma once
+
 #include <assert.h>
 #include <stdlib.h>
 
@@ -17,24 +19,25 @@ class DefaultHasher {
  * is_equal and empty.                       */
 template <typename K, typename V, class H = DefaultHasher<K>>
 struct HashTable {
+	HashTable(size_t expected_nkeys = 0);
+	~HashTable();
+	V* get(K key) const;
+	void set_at(K key, V val);
+	float load_factor() const;
+private:
 	size_t size;
 	size_t buckets;
 	K *keys;
 	V *vals;
 	H hasher;
-	HashTable(size_t expected_nkeys = 0);
-	~HashTable();
-	V* get(K key) const;
-	void set_at(K key, V val);
-	bool load_factor_ok() const;
 	void grow();
+	bool load_factor_ok() const;
 };
 
 
+/* Free function not linked to the class but useful in similar contexts */ 
 template<typename K, typename H>
-static inline
-size_t 
-hash_lookup(K *keys, size_t buckets, H hasher, K key)
+static inline size_t hash_lookup(K *keys, size_t buckets, H hasher, K key)
 {
 	assert(((buckets - 1) & buckets) == 0);
 	size_t mask = buckets - 1;
@@ -56,9 +59,7 @@ hash_lookup(K *keys, size_t buckets, H hasher, K key)
 	return 0;
 }
 
-static inline
-size_t
-hashtable_buckets(size_t n)
+static inline size_t hashtable_buckets(size_t n)
 {
 	size_t ret = 1;
 	while (ret < n) ret *= 2;
@@ -124,6 +125,12 @@ HashTable<K, V, H>::set_at(K key, V val)
 		}
 	}
 }
+
+template<typename K, typename V, typename H>
+float HashTable<K, V, H>::load_factor() const
+{
+	return static_cast<float>(size) / buckets;
+};
 
 template <typename K, typename V, typename H>
 void 

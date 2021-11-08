@@ -1,45 +1,46 @@
-#include "vec3.h"
-#include "quat.h"
-#include "trackball.h"
+#include "Vec3.h"
+#include "Quat.h"
+#include "Trackball.h"
 
+#include <stdio.h>
 
-Trackball::Trackball(float width, float height, float radius) : 
-	width{width}, height{height}, radius{radius}, 
-	saved_point{0.f, 0.f, 1.f} {}
+FTrackball::FTrackball(float Width, float Height, float Radius) : 
+	Width{Width}, Height{Height}, Radius{Radius}, 
+	SavedPosition{0.f, 0.f, 1.f} {}
 
 
 /* Using (inverse) stereographic projection from a sphere of given
  * radius and tangent to the screen plane at position (width/2, height/2).
  * Click coordinates are assumed to go increasing from left to right
  * and from top to bottom, so (0,0) is upper left. */
-Vec3<float> Trackball::vect_at_click(float x, float y) const
+FVec3 FTrackball::VectAtClick(float X, float Y) const
 {
-	float X = (x - 0.5f * width) / radius;
-	float Y = (0.5 * height - y) / radius;
-	float a = 2.f / (1.f + X * X + Y * Y);
+	float XX = (X - 0.5f * Width) / Radius;
+	float YY = (0.5 * Height - Y) / Radius;
+	float A = 2.f / (1.f + XX * XX + YY * YY);
 
-	Vec3<float> V {a * X, a * Y, -1.f + a};
-
-	assert(approx_equal<float>(V.norm(), 1.f));
+	FVec3 V {A * XX, A * YY, -1.f + A};
+	
+	assert(AreApproxEqual<float>(V.Norm(), 1.f));
 
 	return V;
 }
 
-void Trackball::track_from(float x, float y)
+void FTrackball::TrackFrom(float X, float Y)
 {
-	saved_point = vect_at_click(x, y);
+	SavedPosition = VectAtClick(X, Y);
 }
 
-Quat<float> Trackball::get_rotation_to(float x, float y) const
+FQuat FTrackball::GetRotationTo(float X, float Y) const
 {
-	Vec3<float> new_point = vect_at_click(x, y);
+	FVec3 NewPosition = VectAtClick(X, Y);
 
-	return great_circle_rotation(saved_point, new_point);
+	return GreatCircleRotation(SavedPosition, NewPosition);
 }
 
-void Trackball::resize(float width, float height, float radius)
+void FTrackball::Resize(float Width, float Height, float Radius)
 {
-	this->width = width;
-	this->height = height;
-	this->radius = radius;
+	this->Width = Width;
+	this->Height = Height;
+	this->Radius = Radius;
 }

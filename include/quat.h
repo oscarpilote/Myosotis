@@ -1,5 +1,4 @@
-#ifndef _QUAT_H
-#define _QUAT_H
+#pragma once
 
 #include <assert.h>
 
@@ -7,84 +6,134 @@
 #include "vec3.h"
 
 template <typename T>
-struct alignas(4 * sizeof(T)) Quat {
-	T r;
-	Vec3<T> V;
+struct alignas(4 * sizeof(T)) TQuat {
+	
+	/* Members */
+	TVec3<T> xyz;
+	T w;
 
 	/* Constructors */
-	Quat() {};
-	Quat(T r, Vec3<T> V);
-
-	/* Norm */
-	T dot(const Quat& Q) const;
-	T norm() const;
-
-	/* Multiplication */
-	Quat operator* (const Quat& Q) const;
-	Quat operator* (T a) const;
+	TQuat() = default;
+	TQuat(TVec3<T> xyz, T w);
 	
-	/* Conjugate and inverse   */
-	/* TODO Quat conj() const; */
-	/* TODO Quat inv() const;  */
+	/* Static Helpers */
+	static constexpr TQuat Identity {0, 0, 0, 1};
+
+	/* Operator and Methods */
+	TQuat& operator*= (const TQuat& a);
+	TQuat& operator*= (const T& t);
+	TQuat conj() const;
+	TQuat inverse() const;
+	TQuat& normalise();
 };
 
+typedef TQuat<float> Quat;
+
+/* Free functions */
+
+/* Note: -q := q.conj() , this is handy for when working with
+ * unit quaternions as rotations because then -q is the unit
+ * quaternion associated to the inverse rotation. 
+ * In brief: if q is rotate then -q is unrotate.
+ */
 template <typename T>
-inline
-Quat<T>::Quat(T r, Vec3<T> V) : r{r}, V{V} {};
+inline TQuat<T> operator- (const TQuat<T>& a);
 
 template <typename T>
-inline
-T Quat<T>::dot(const Quat& Q) const
+inline TQuat<T> operator* (const TQuat<T>& a, const TQuat<T>& b);
+
+template <typename T>
+inline TQuat<T> operator* (const TQuat<T>& a, const T& t);
+
+template <typename T>
+inline TQuat<T> operator* (const T& t, const TQuat<T>& a);
+
+template <typename T>
+T dot(const TQuat<T>& a, const TQuat<T>& b);
+
+template <typename T>
+inline T norm(const TQuat<T>& a);
+
+/* Methods implementation */
+
+template <typename T>
+inline TQuat<T>::TQuat(TVec3<T> xyz, T w) : xyz{xyz}, w{w} {};
+
+template <typename T>
+inline TQuat<T>& TQuat<T>::operator*= (const TQuat& a)
 {
-	return r * Q.r + V.dot(Q.V);
+	/* TODO : better ? */
+	*this = *this * a;
+	return (*this);
 }
 
 template <typename T>
-inline
-T Quat<T>::norm() const
+inline TQuat<T>& TQuat<T>::operator*= (const T& t)
 {
-	return std::sqrt(r * r + V.dot(V));
+	xyz *= t;
+	w *= t;
+	return (*this);
 }
 
 template <typename T>
-inline
-Quat<T> Quat<T>::operator*(const Quat& Q) const
+inline TQuat<T> TQuat<T>::conj() const
 {
-	return {r * Q.r - V.dot(Q.V),
-		r * Q.V + V * Q.r + V.cross(Q.V)};
+	return {-xyz, w};
 }
 
 template <typename T>
-inline
-Quat<T> Quat<T>::operator*(T a) const
+inline TQuat<T> TQuat<T>::inverse() const
 {
-	return {r * a, V * a};
+	return this->conj() *= (1.f / dot(*this, *this));
 }
 
 template <typename T>
-Quat<T> great_circle_rotation(const Vec3<T>& from, const Vec3<T>& to)
+inline TQuat<T>& TQuat<T>::normalise()
 {
-	assert(approx_equal<T>(from.norm(), 1));
-	assert(approx_equal<T>(  to.norm(), 1));
-
-	/* a = angle between from and to */
-	T cos_a = from.dot(to);
-	if (approx_equal<T>(cos_a, -1)) 
-	{
-		return {0, {0, 0, 1}};
-	}
-
-	T cos_half_a = std::sqrt((1.f + cos_a) / 2.f);
-
-	assert(cos_half_a != 0);
-	
-	T sin_half_a_over_sin_a = 0.5f / cos_half_a;
-
-	T r = cos_half_a;
-	Vec3<T> V = from.cross(to) * sin_half_a_over_sin_a;
-	
-	return {r, V};
+	*this *= (1.f / norm(*this));
+	return (*this);
 }
 
-#endif /* _QUAT_H */
+/* Free functions implementation */
+
+template <typename T>
+inline TQuat<T> operator- (const TQuat<T>& a)
+{
+	return a.conj();
+}
+
+template <typename T>
+inline TQuat<T> operator* (const TQuat<T>& a, const TQuat<T>& b)
+{
+	return {a.w * b.xyz + a.xyz * b.w + cross(a.xyz, b.xyz),
+		a.w * b.w - dot(a.xyz, b.xyz)};
+}
+
+template <typename T>
+inline TQuat<T> operator* (const TQuat<T>& a, const T& t)
+{
+	return {t * a.xyz, t * a.w};
+}
+
+template <typename T>
+inline TQuat<T> operator* (const T& t, const TQuat<T>& a)
+{
+	return a * t;
+}
+
+template <typename T>
+inline T dot(const TQuat<T>& a, const TQuat<T>& b)
+{
+	return dot(a.xyz, b.xyz) + a.w * b.w;
+}
+
+template <typename T>
+inline T norm(const TQuat<T>& a)
+{
+	return sqrt(dot(a, a));
+}
+
+
+
+
 

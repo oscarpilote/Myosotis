@@ -3,21 +3,21 @@
 
 #include <assert.h>
 
-#include "math_utils.h"
-#include "vec3.h"
-#include "quat.h"
+#include "Vec3.h"
+#include "Quat.h"
 
-struct Trackball {
-	float width;
-	float height;
-	float radius;
-	Vec3<float> saved_point;
-	Trackball() {};
-	Trackball(float width, float height, float radius);
-	Vec3<float> vect_at_click(float x, float y) const;
-	void track_from(float x, float y);
-	Quat<float> get_rotation_to(float x, float y) const;
-	void resize(float width, float height, float radius);
+struct FTrackball {
+	float Width;
+	float Height;
+	float Radius;
+	FVec3 SavedPosition;
+	
+	FTrackball() = default;
+	FTrackball(float Width, float Height, float Radius);
+	FVec3 VectAtClick(float X, float Y) const;
+	void TrackFrom(float X, float Y);
+	FQuat GetRotationTo(float X, float Y) const;
+	void Resize(float Width, float Height, float Radius);
 };
 
 

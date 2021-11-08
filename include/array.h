@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdlib.h>
 #include <assert.h>
 
@@ -10,15 +12,16 @@ struct Array {
 	T *data;
 	Array();
 	~Array();
-	T& operator[](size_t i) const;
+	T& operator[] (size_t i);
+	const T& operator[] (size_t i) const;
 	void push_back(const T &t);
 };
 
 template< typename T>
-Array<T>::Array() : size{0}, capacity{0}, data{nullptr} {}
+inline Array<T>::Array() : size{0}, capacity{0}, data{nullptr} {}
 
 template<typename T>
-Array<T>::~Array()
+inline Array<T>::~Array()
 {
 	size = 0;
 	capacity = 0;
@@ -26,16 +29,21 @@ Array<T>::~Array()
 }
 
 template<typename T>
-T& 
-Array<T>::operator[](size_t i) const
+inline T& Array<T>::operator[](size_t i)
 {
 	assert(i < size);
 	return (data[i]);
 }
 
 template<typename T>
-void 
-Array<T>::push_back(const T &t)
+inline const T& Array<T>::operator[](size_t i) const
+{
+	assert(i < size);
+	return (data[i]);
+}
+
+template<typename T>
+inline void Array<T>::push_back(const T &t)
 {
 	if (size >= capacity) {
 		capacity = capacity < ARRAY_FIRST_CAPACITY ? 

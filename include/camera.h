@@ -1,122 +1,138 @@
-#ifndef _CAMERA_H
-#define _CAMERA_H
+#pragma once
 
 #include <math.h>
-
 #include "vec3.h"
 #include "quat.h"
 #include "mat4.h"
+#include "affine.h"
+#include "frustum.h"
 
-template <typename T>
-class Camera 
+
+
+struct Camera 
 {
-private:
-	/* Sensor size (unit is irrelevant but should match 
-	 * with focal_length and lense_shift_[x/y] units below) */
-	float sensor_width;
-	float sensor_height;
-
-	/* Lense focal length */
-	float focal_length;
-
-	/* Lense axis shift with respect to sensor center */
-	float lense_shift_x = 0.f;
-	float lense_shift_y = 0.f;
-
-	/* Frustum depth */
-	float near_plane = 1e-2f;
-	float far_plane  = 1e+3f;
-
-	/* Derived parameters (automatically updated by 
-	 * setters of previous ones) */
-	float aspect_x;		/*  2n/(r-l)   */
-	float aspect_y;		/*  2n/(t-b)   */
-	float shift_ratio_x;	/* (r+l)/(r-l) */
-	float shift_ratio_y;	/* (t+b)/(t-b) */
-	
-	/* Projection type. True for orthographic camera. */
-	bool is_orthographic = false;
-	
-	/* Space configuration	*/
-	Vec3<T> pos = {0.f, 0.f, 0.f};
-	Quat<T> rot = {1.f, {0.f, 0.f, 0.f}};
-
-	/* Updating dervied parameters for consistency */ 
-	void update_params();
-	
 public:
-	/* Constructor */
-	Camera() {};
-	Camera(float sensor_width, float sensor_height, float lense_fov); 
-	void init(float sensor_width, float sensor_height, float lense_fov);
+	enum Fov   {Horizontal = 0, Vertical = 1};
+	enum Space {View = 0, World = 1};
+	enum Proj  {Perspective = 0, Orthographic = 1};
 
-	/* Accessors */
-	float width() const;
-	float height() const;
-	float fov() const;
-	float focal() const;
-	float near() const;
-	float far() const;
-	bool  is_ortho() const;
+	/**
+	 * Constructs a camera with given aspect ratio and fov.
+	 *
+	 * By default:
+	 *  - lense axis is centered over sensor
+	 *  - camera posittion is world origin
+	 *  - camera rotation is identity
+	 *  - projection is perpesctive
+	 *  - near and far plane are 0.01 and 1000.
+	 *
+	 * @param aspect_ratio - sensor width / sensor_height.
+	 * @param fov - Field of view in degrees.
+	 * @param axis - Axis along which fov is understood.
+	 */
+	Camera(float aspect_ratio, float fov, Fov axis = Horizontal);
 
+	/**
+	 * Change camera aspect ratio and adapt either horizontal or vertical
+	 * fov to avoid distortion.
+	 *
+	 * @param aspect_ratio - New aspect_ratio.
+	 * @param cst_axis - Axis whose fov shall be kept constant.
+	 */
+	Camera& set_aspect(float aspect_ratio, Fov cst_axis = Horizontal);
 
-	/* Modifiers   */
-	Camera& resize_sensor(float width, float height, bool keep_const_fov = true);
-	Camera& set_lense_fov(float deg /* horizontal fov */);
-	Camera& set_lense_focal(float length);
-	Camera& set_lense_shift(float x, float y);
-	Camera& set_near(float near);
-	Camera& set_far(float far);
-	Camera& set_ortho(bool is_ortho);
+	/**
+	 * Change camera fov.
+	 *
+	 * @param fov - New fov.
+	 * @param axis - Axis along which fov is understood.
+	 */
+	Camera& set_fov(float fov, Fov axis = Horizontal);
 
-	/* Space positioning */
-	const Vec3<T>& get_position() const;
-	const Quat<T>& get_rotation() const;
-	Camera& set_position(const Vec3<T>& pos);
-	Camera& set_rotation(const Quat<T>& rot);
-	Camera& translate(const Vec3<T>& delta_world_pos);
-	Camera& move(const Vec3<T>& delta_view_pos);
-	Camera& rotate(const Quat<T>& delta_rot);
-	Camera& orbit(const Quat<T>& delta_rot, const Vec3<T>& center);
+	/**
+	 * Change lense shift for non centered lenses.
+	 *
+	 * @param shift_x - Shift ratio along horizontal axis.
+	 * @param shiff_y - Shift ratio along vertical axis.
+	 *
+	 * In practice: If screen is P pixels height and you wish the horizon 
+	 *              to appear p pixels from the bottom when the camera is
+	 *              leveled set shift_y = 1 - 2 * (p / P).
+	 */
+	Camera& set_lense_shift(float shift_x, float shift_y);
 
-	/* Matrices */
-	Mat4<float> proj_matrix() const;
-	Mat4<T> view_matrix() const;
-	Mat4<T> proj_view_matrix() const;
-};
+	/* Get or Set position and rotation. */
+	Vec3 get_position() const;
+	Quat get_rotation() const;
+	Camera& set_position(const Vec3& position);
+	Camera& set_rotation(const Quat& rotation);
 
-template <typename T>
-void Camera<T>::update_params()
-{
+	/**
+	 * Apply a translation to the camera.
+	 *
+	 * @param t - Vector of translation.
+	 * @param coord - Coordinate frame in which t is understood. 
+	 */
+	Camera& translate(const Vec3& t, Space coord = View);
 
-}
+	/* Apply a rotation to the camera around its center.
+	 *
+	 * @param delta_rot {Quat} - Additional rotation wrt present.
+	 */
+	Camera& rotate(const Quat& r);
 
-template <typename T>
-void Camera<T>::init(float sensor_width, float sensor_height, float lense_fov)
-{
-	this->sensor_width = sensor_width;
-	this->sensor_height = sensor_height;
-	this->focal_length = sensor_width / (2 * tan(lense_fov / 2)); 
-}
+	/* Roto translate the camera around some pivot point.
+	 *
+	 * @param r {Quat} - Additional rotation wrt present.
+	 * @param pivot - Pivot point in world coordinates.
+	 */
+	Camera& orbit(const Quat& r, const Vec3& pivot);
 
-template <typename T>
-Camera<T>& Camera<T>::resize_sensor(float width, float height, bool keep_const_fov)
-{
-	sensor_width = width;
-	sensor_height = height;
+	/**
+	 * Get and set near and far clip distances for rendering.
+	 * - It is your responsability to not set near_plane equal to
+	 *   far_plane, or projection matrices will contain NaNs.
+	 * - It is legal to set near_plane and far_plane in reversed
+	 *   order, or to set any of these two planes to 0 or to +-infty, 
+	 *   but one should then understand the impacts, in particular 
+	 *   for depth buffer precision.
+	 */       
+	float get_near() const;
+	float get_far() const;
+	Camera& set_near(float near_plane);
+	Camera& set_far (float far_plane );
 	
-	if (keep_const_fov)
-	{
-		/* TODO */
-	}
+	/**
+	 * Compute matrices between World, View and Clip spaces.
+	 * NB) Matrices are recorded in column major order in memory.
+	 */
+	Mat4 view_to_clip()  const;
+	Mat4 world_to_view() const;
+	Mat4 view_to_world() const;
+	Mat4 world_to_clip() const;
 
-	update_params();
+	/**
+	 * TODO 
+	 */
+	Line view_ray_at (float x, float y) const;
+	Line world_ray_at(float x, float y) const;
 
-	return *this;
-}
+	/*
+	 * TODO
+	 */
+	Vec3 view_coord_at (float x, float y, float depth) const;
+	Vec3 world_coord_at(float x, float y, float depth) const;
+private:
+	/* Space configuration */
+	Quat  rotation  = Quat::Identity;
+	Vec3  position  = Vec3::Zero;
+	
+	/* Cfr "frustum.h" */
+	CameraFrustum frustum;
 
-
-
-
-
-#endif /* _CAMERA_H */
+	/* Projection type.
+	 * For Orthographic, fov is non physical but a proxy for frustum
+	 * width and height.
+	 */
+	Proj type = Perspective;
+};

@@ -1,94 +1,177 @@
-#ifndef _VEC3_H
-#define _VEC3_H
+#pragma once
 
 #include <assert.h>
 #include <cmath>
 
 template <typename T>
-struct Vec3 {
+struct TVec3 {
+	
+	/* Members */
 	T x;
 	T y;
 	T z;
-
+	
 	/* Constructors */
-	Vec3() {}; 
-	Vec3(T x, T y, T z);
+	TVec3() = default; 
+	TVec3(T x, T y, T z);
 
 	/* Index Accessor */
-	T operator[] (int n) const;
+	T& operator[] (int n);
+	const T& operator[] (int n) const;
 
 	/* Vector space structure */
-	Vec3 operator+ (const Vec3& V) const;
-	Vec3 operator- (const Vec3& V) const;
-	Vec3 operator* (T a) const;
+	TVec3& operator-  () const;
+	TVec3& operator+= (const TVec3& a);
+	TVec3& operator-= (const TVec3& a);
+	TVec3& operator*= (const T& t);
+	TVec3& operator/= (const T& t);
 
-	/* Vector operations */
-	T dot(const Vec3& V) const;
-	T norm() const;
-	Vec3 cross(const Vec3& V) const;
+	/* Static members */
+	static const TVec3 Zero;
+	static const TVec3 XAxis;
+	static const TVec3 YAxis;
+	static const TVec3 ZAxis;
 };
 
+typedef TVec3<float> Vec3;
+
+/* Free functions declarations */
+
 template <typename T>
-inline
-Vec3<T>::Vec3(T x, T y, T z) : x{x}, y{y}, z{z} {}
+inline TVec3<T> operator+ (const TVec3<T>& a, const TVec3<T>& b);  
+
+template <typename T>
+inline TVec3<T> operator- (const TVec3<T>& a, const TVec3<T>& b);  
+
+template <typename T>
+inline TVec3<T> operator* (const TVec3<T>& a, const T& t);
+
+template <typename T>
+inline TVec3<T> operator* (const T& t, const TVec3<T>& a);
+
+template <typename T>
+inline T dot(const TVec3<T>& a, const TVec3<T>& b);
+
+template <typename T>
+inline T cross(const TVec3<T>& a, const TVec3<T>& b);
+
+template <typename T>
+inline T norm(const TVec3<T> a);
+
+/* Static Helpers */
+
+template <typename T>
+const TVec3<T> TVec3<T>::Zero  {0, 0, 0};
+template <typename T>
+const TVec3<T> TVec3<T>::XAxis {1, 0, 0};
+template <typename T>
+const TVec3<T> TVec3<T>::YAxis {0, 1, 0};
+template <typename T>
+const TVec3<T> TVec3<T>::ZAxis {0, 0, 1};
+
+/* Functions implementations */
 
 template <typename T>
 inline
-T Vec3<T>::operator[](int n) const
+TVec3<T>::TVec3(T x, T y, T z) : x{x}, y{y}, z{z} {}
+
+template <typename T>
+inline
+const T& TVec3<T>::operator[](int n) const
 {
 	assert(n >= 0 && n <= 2);
 	return (&x)[n];
 }
 
 template <typename T>
-inline
-Vec3<T> Vec3<T>::operator+(const Vec3& V) const
+inline T& TVec3<T>::operator[](int n)
 {
-	return {x + V.x, y + V.y, z + V.z};
+	assert(n >= 0 && n <= 2);
+	return (&x)[n];
 }
 
 template <typename T>
-inline
-Vec3<T> Vec3<T>::operator-(const Vec3& V) const
+inline TVec3<T>& TVec3<T>::operator-() const
 {
-	return {x - V.x, y - V.y, z - V.z};
+	return {-x, -y, -z};
 }
 
 template <typename T>
-inline
-Vec3<T> Vec3<T>::operator*(T a) const
+inline TVec3<T>& TVec3<T>::operator+= (const TVec3<T>& a)
 {
-	return {a * x, a * y, a * z};
+	x += a.x; 
+	y += a.y;
+	z += a.z;
+	return (*this);
 }
 
 template <typename T>
-inline
-Vec3<T> operator*(T a, const Vec3<T>& V)
+inline TVec3<T>& TVec3<T>::operator-= (const TVec3<T>& a)
 {
-	return (V * a);
+	x -= a.x; 
+	y -= a.y;
+	z -= a.z;
+	return (*this);
 }
 
 template <typename T>
-inline
-T Vec3<T>::dot(const Vec3<T>& V) const
+inline TVec3<T>& TVec3<T>::operator*= (const T& t)
 {
-	return (x * V.x + y * V.y + z * V.z);
+	x *= t; 
+	y *= t;
+	z *= t;
+	return (*this);
 }
 
 template <typename T>
-inline
-T Vec3<T>::norm() const
+inline TVec3<T>& TVec3<T>::operator/= (const T& t)
 {
-	return std::sqrt(x * x + y * y + z * z);
+	x /= t; 
+	y /= t;
+	z /= t;
+	return (*this);
 }
 
 template <typename T>
-inline
-Vec3<T> Vec3<T>::cross(const Vec3<T>& V) const
+inline TVec3<T> operator+ (const TVec3<T>& a, const TVec3<T>& b)
 {
-	return {y * V.z - z * V.y,
-		z * V.x - x * V.z,
-		x * V.y - y * V.x};
+	return {a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
-#endif /* _VEC3_H */
+template <typename T>
+inline TVec3<T> operator- (const TVec3<T>& a, const TVec3<T>& b)
+{
+	return {a.x - b.x, a.y - b.y, a.z - b.z};
+}
+
+template <typename T>
+inline TVec3<T> operator* (const TVec3<T>& a, const T& t)
+{
+	return {a.x * t, a.y * t, a.z * t};
+}
+
+template <typename T>
+inline TVec3<T> operator* (const T& t, const TVec3<T>& a)
+{
+	return a * t;
+}
+
+template <typename T>
+inline T dot(const TVec3<T>& a, const TVec3<T>& b)
+{
+	return (a.x * b.x + a.y * b.y + a.z * b.z);
+}
+
+template <typename T>
+inline T cross(const TVec3<T>& a, const TVec3<T>& b)
+{
+	return {a.y * b.z - a.z * b.y,
+		a.z * b.x - a.x * b.z,
+		a.x * b.y - a.y * b.x};
+}
+
+template <typename T>
+inline T norm(const TVec3<T> a)
+{
+	return sqrt(dot(a,a));
+}
