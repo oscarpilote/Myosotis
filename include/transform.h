@@ -13,7 +13,7 @@ struct TRigid {
 	TQuat<T> rot;
 	TVec3<T> trans;
 
-	TRigid inv() const;
+	TRigid   inv() const;
 	TMat4<T> as_matrix() const;
 
 	static constexpr TRigid Identity = {TQuat<T>::Identity, TVec3<T>::Zero};
@@ -47,6 +47,13 @@ template <typename T>
 TQuat<T> great_circle_rotation(const TVec3<T>& from, const TVec3<T>& to);
 
 /* Implementations */
+
+template <typename T>
+TRigid<T> TRigid<T>::inv() const
+{
+	return {-rot, -unrotate(trans, rot)};
+
+}
 
 template <typename T>
 TMat4<T> TRigid<T>::as_matrix() const
