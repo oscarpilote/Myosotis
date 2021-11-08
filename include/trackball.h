@@ -1,24 +1,21 @@
-#ifndef _TRACKBALL_H
-#define _TRACKBALL_H
+#pragma once
 
 #include <assert.h>
 
-#include "Vec3.h"
-#include "Quat.h"
+#include "vec3.h"
+#include "quat.h"
 
-struct FTrackball {
-	float Width;
-	float Height;
-	float Radius;
-	FVec3 SavedPosition;
+struct Trackball {
+	float width;
+	float height;
+	float radius;
+	Vec3 saved_position;
 	
-	FTrackball() = default;
-	FTrackball(float Width, float Height, float Radius);
-	FVec3 VectAtClick(float X, float Y) const;
-	void TrackFrom(float X, float Y);
-	FQuat GetRotationTo(float X, float Y) const;
-	void Resize(float Width, float Height, float Radius);
+	Trackball() = default;
+	Trackball(float width, float height, float radius);
+	Vec3 vect_at_click(float x, float y) const;
+	void track_from(float x, float y);
+	Quat get_rotation_to(float x, float y) const;
+	void resize(float width, float height, float radius);
 };
 
-
-#endif /* _TRACKBALL_H */

@@ -27,7 +27,6 @@ Camera::Camera(float aspect_ratio, float fov, Fov axis)
 		frustum.aspect_x = focal_ratio / aspect_ratio;
 		frustum.aspect_y = focal_ratio;
 	}
-
 }
 
 Camera& Camera::set_aspect(float aspect_ratio, const Fov cst_axis)
@@ -69,6 +68,12 @@ Camera& Camera::set_lense_shift(float shift_x, float shift_y)
 {
 	frustum.shift_x = shift_x;
 	frustum.shift_y = shift_y;
+	return (*this);
+}
+
+Camera& Camera::set_orthographic(bool is_ortho)
+{
+	frustum.is_ortho = is_ortho;
 	return (*this);
 }
 
@@ -144,14 +149,7 @@ Camera& Camera::set_far(float far_plane)
 
 Mat4 Camera::view_to_clip() const
 {
-	if (type == Perspective) 
-	{
-		return perspective_matrix(frustum);
-	}
-	else
-	{
-		return orthographic_matrix(frustum);
-	}
+	return projection_matrix(frustum);
 }
 
 Mat4 Camera::world_to_view() const

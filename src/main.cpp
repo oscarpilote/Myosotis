@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <GLFW/glfw3.h>
 
-#include "Version.h"
-#include "Viewer3D.h"
+#include "version.h"
+#include "viewer.h"
 
-bool InitWindowSystem()
+bool init_window_system()
 {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
@@ -16,7 +16,7 @@ bool InitWindowSystem()
 	return glfwInit();
 }
 
-void CloseWindowSystem()
+void close_window_system()
 {
 	glfwTerminate();
 }
@@ -26,25 +26,25 @@ void CloseWindowSystem()
 int main(int argc, char **argv)
 {
 
-	if (!InitWindowSystem())
+	if (!init_window_system())
 	{
 		printf("Could not init windowing system.\n");
 		return EXIT_FAILURE;
 	}
 
 	/* Main window */
-	Viewer3D Viewer;
+	Viewer3D viewer;
 	
-	if ( !Viewer.Init(1024, 768, "3D Viewer") )
+	if ( !viewer.init(1024, 768, "3D Viewer") )
 	{
 		printf("Failed to init viewer.\n");
-		CloseWindowSystem();
+		close_window_system();
 		return EXIT_FAILURE;
 	}
 
-	while (!glfwWindowShouldClose(Viewer.Window)) {
-		Viewer.ProcessKeys();
-		glfwSwapBuffers(Viewer.Window);
+	while (!glfwWindowShouldClose(viewer.window)) {
+		viewer.process_keys();
+		glfwSwapBuffers(viewer.window);
 		glfwPollEvents();
 	}
 	glfwTerminate();

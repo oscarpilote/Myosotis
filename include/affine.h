@@ -1,3 +1,5 @@
+#pragma once 
+
 #include "vec3.h"
 
 template <typename T> struct TPoint;
@@ -15,11 +17,11 @@ struct TPoint {
 	
 	TPoint(T x, T y, T z, T w);
 	TPoint(T x, T y, T z);
-	explicit TPoint(TVec3<T> v);
+	TPoint(TVec3<T> v);
 
 	TPoint operator+= (const TVect<T>& v);
 
-	static constexpr TPoint Origin;
+	static constexpr TPoint Origin {0, 0, 0, 1};
 };
 
 

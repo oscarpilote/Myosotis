@@ -3,11 +3,12 @@ include_directories(
 	)
 
 add_executable(Myosotis 
-	Main.cpp
-	Viewer3d.cpp
-	Camera.cpp
-	Trackball.cpp
+	main.cpp
+	viewer.cpp
+	camera.cpp
+	frustum.cpp
+	trackball.cpp
 	)
-
+target_compile_features(Myosotis PUBLIC cxx_std_17)
 target_link_libraries(Myosotis OpenGL glfw)
 

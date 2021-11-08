@@ -14,7 +14,7 @@ struct TRigid {
 	TVec3<T> trans;
 
 	TRigid inv() const;
-	Mat4 as_matrix() const;
+	TMat4<T> as_matrix() const;
 
 	static constexpr TRigid Identity = {TQuat<T>::Identity, TVec3<T>::Zero};
 };
@@ -32,10 +32,10 @@ template <typename T>
 TQuat<T> compose(const TQuat<T>& r1, const TQuat<T>& r2);
 
 template <typename T>
-TRigid<T> compose(const TQuat<T>& r, const TVect<T>& t);
+TRigid<T> compose(const TQuat<T>& r, const TVec3<T>& t);
 
 template <typename T>
-TRigid<T> compose(const TVect<T>& t, const TQuat<T>& r);
+TRigid<T> compose(const TVec3<T>& t, const TQuat<T>& r);
 
 template <typename T>
 TRigid<T> compose(const TRigid<T>& rt1, const TRigid<T>& rt2);
@@ -47,6 +47,11 @@ template <typename T>
 TQuat<T> great_circle_rotation(const TVec3<T>& from, const TVec3<T>& to);
 
 /* Implementations */
+
+template <typename T>
+TMat4<T> TRigid<T>::as_matrix() const
+{
+}
 
 template <typename T>
 inline TVec3<T> rotate(const TVec3<T>& v, const TQuat<T>& q)
@@ -62,8 +67,8 @@ inline TVec3<T> unrotate(const TVec3<T>& v, const TQuat<T>& q)
 {
 	assert(approx_equal<T>(norm(q), 1));
 	
-	return 2.f * dot(q.xyz, v) * q.xyz + (2.f * q.w * q.w - 1.f) * v -
-		2.f * q.w * cross(q.xyz, v);
+	return (2.f * dot(q.xyz, v) * q.xyz) + ((2.f * q.w * q.w - 1.f) * v) -
+		(2.f * q.w * cross(q.xyz, v));
 }
 
 template <typename T>
@@ -79,13 +84,13 @@ TQuat<T> compose(const TQuat<T>& r1, const TQuat<T>& r2)
 }
 
 template <typename T>
-TRigid<T> compose(const TQuat<T>& r, const TVect<T>& t)
+TRigid<T> compose(const TQuat<T>& r, const TVec3<T>& t)
 {
 	return {r, t};
 }
 
 template <typename T>
-TRigid<T> compose(const TVect<T>& t, const TQuat<T>& r)
+TRigid<T> compose(const TVec3<T>& t, const TQuat<T>& r)
 {
 	return {r, rotate(t, r)};
 }

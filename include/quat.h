@@ -14,10 +14,10 @@ struct alignas(4 * sizeof(T)) TQuat {
 
 	/* Constructors */
 	TQuat() = default;
-	TQuat(TVec3<T> xyz, T w);
+	constexpr TQuat(TVec3<T> xyz, T w);
 	
 	/* Static Helpers */
-	static constexpr TQuat Identity {0, 0, 0, 1};
+	static constexpr TQuat Identity {TVec3<T>::Zero, 1};
 
 	/* Operator and Methods */
 	TQuat& operator*= (const TQuat& a);
@@ -57,7 +57,7 @@ inline T norm(const TQuat<T>& a);
 /* Methods implementation */
 
 template <typename T>
-inline TQuat<T>::TQuat(TVec3<T> xyz, T w) : xyz{xyz}, w{w} {};
+constexpr TQuat<T>::TQuat(TVec3<T> xyz, T w) : xyz{xyz}, w{w} {};
 
 template <typename T>
 inline TQuat<T>& TQuat<T>::operator*= (const TQuat& a)

@@ -40,3 +40,8 @@ inline const T& TMat4<T>::operator()(int i, int j) const
 	return Coeff[j][i];
 }
 
+
+template <typename T>
+TMat4<T> operator* (const TMat4<T>& m1, const TMat4<T>& m2)
+{
+}

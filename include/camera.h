@@ -14,16 +14,27 @@ struct Camera
 public:
 	enum Fov   {Horizontal = 0, Vertical = 1};
 	enum Space {View = 0, World = 1};
-	enum Proj  {Perspective = 0, Orthographic = 1};
 
+	/**
+	 * Constructs a default camera.
+	 *
+	 *  - camera posittion is world origin
+	 *  - camera rotation is identity
+	 *  - lense axis is centered over sensor
+	 *  - sensor aspect ratio is 1
+	 *  - lense fov is 90°
+	 *  - projection type is perspective
+	 *  - near and far plane are 0.01 and 1000.
+	 */
+	Camera() = default;
+	
 	/**
 	 * Constructs a camera with given aspect ratio and fov.
 	 *
-	 * By default:
-	 *  - lense axis is centered over sensor
 	 *  - camera posittion is world origin
 	 *  - camera rotation is identity
-	 *  - projection is perpesctive
+	 *  - lense axis is centered over sensor
+	 *  - projection type is perpesctive
 	 *  - near and far plane are 0.01 and 1000.
 	 *
 	 * @param aspect_ratio - sensor width / sensor_height.
@@ -60,6 +71,13 @@ public:
 	 *              leveled set shift_y = 1 - 2 * (p / P).
 	 */
 	Camera& set_lense_shift(float shift_x, float shift_y);
+
+	/**
+	 * Change camera projection type.
+	 *
+	 * @param IsOrtho - Perspective vs Orthographic projection.
+	 */
+	Camera& set_orthographic(bool is_ortho);
 
 	/* Get or Set position and rotation. */
 	Vec3 get_position() const;
@@ -127,12 +145,6 @@ private:
 	Quat  rotation  = Quat::Identity;
 	Vec3  position  = Vec3::Zero;
 	
-	/* Cfr "frustum.h" */
+	/* Optical configuration */
 	CameraFrustum frustum;
-
-	/* Projection type.
-	 * For Orthographic, fov is non physical but a proxy for frustum
-	 * width and height.
-	 */
-	Proj type = Perspective;
 };

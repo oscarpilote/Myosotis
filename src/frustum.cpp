@@ -4,86 +4,95 @@
 #include "gfx_api_defs.h" /* NDC_REVERSED_Y NDC_REVERSED_Z NDC_Z_ZERO_ONE */
 #include "mat4.h"
 
-Mat4 perspective_matrix(const CameraFrustum& f)
+Mat4 projection_matrix(const CameraFrustum& frustum)
 {
-	assert(f.near != f.far);
-	
-	const float aspect_x = f.aspect_x;
-	const float aspect_y = f.aspect_y;
-	const float shift_x = f.shift_x;
-	const float shift_y = f.shift_y;
-	const float near = f.near;
-	const float far = f.far;
+	if (!frustum.is_ortho)
+	{
+		return persp_matrix(
+				frustum.aspect_x, frustum.aspect_y,
+				frustum.shift_x, frustum.shift_y,
+				frustum.near, frustum.far);
+	}
+	else 
+	{
+		return ortho_matrix(
+				frustum.aspect_x, frustum.aspect_y,
+				frustum.shift_x, frustum.shift_y,
+				frustum.near, frustum.far);
+	}
+}
 
+Mat4 persp_matrix(float ax, float ay, float sx, float sy, float n, float f)
+{
+	assert(n != f);
+	
 	Mat4 M;
 
 	/* col 0 */
-	M(0,0) = aspect_x;
+	M(0,0) = ax;
 	M(1,0) = 0.f;
 	M(2,0) = 0.f;
 	M(3,0) = 0.f;
 
 	/* col 1 */
 	M(0,1) = 0.f;
-	if constexpr( reversed_y) M(1,1) = -aspect_y;
-	if constexpr(!reversed_y) M(1,1) = +aspect_y;
+	if constexpr( reversed_y) M(1,1) = -ay;
+	if constexpr(!reversed_y) M(1,1) = +ay;
 	M(2,1) = 0.f;
 	M(3,1) = 0.f;
 
 	/* col 2*/
-	M(0,2) = shift_x;
-	if constexpr( reversed_y) M(1,2) = -shift_y;
-	if constexpr(!reversed_y) M(1,2) = +shift_y;
+	M(0,2) = sx;
+	if constexpr( reversed_y) M(1,2) = -sy;
+	if constexpr(!reversed_y) M(1,2) = +sy;
 	if constexpr( z_zero_one &&  reversed_z) 
-		M(2,2) = near / (far - near); 
+		M(2,2) = n / (f - n); 
 	if constexpr( z_zero_one && !reversed_z) 
-		M(2,2) = -1.f / (1.f - near / far);
+		M(2,2) = -1.f / (1.f - n / f);
 	if constexpr(!z_zero_one &&  reversed_z) 
-		M(2,2) = (1.f + near / far) / (1.f - near / far);
+		M(2,2) = + (1.f + n / f) / (1.f - n / f);
 	if constexpr(!z_zero_one && !reversed_z) 
-		M(2,2) = - (1.f + near / far) / (1.f - near / far);
+		M(2,2) = - (1.f + n / f) / (1.f - n / f);
 	M(3,2) = -1.f;
 
 	/* col 3 */
 	M(0,3) = 0.f;
 	M(1,3) = 0.f;
 	if constexpr( z_zero_one &&  reversed_z) 
-		M(2,3) = near / (1.f - near / far);
+		M(2,3) = n / (1.f - n / f);
 	if constexpr( z_zero_one && !reversed_z) 
-		M(2,3) = -near / (1.f - near / far);
+		M(2,3) = -n / (1.f - n / f);
 	if constexpr(!z_zero_one &&  reversed_z) 
-		M(2,3) = 2.f * near / (1.f - near / far);
+		M(2,3) = 2.f * n / (1.f - n / f);
 	if constexpr(!z_zero_one && !reversed_z) 
-		M(2,3) = -2.f * near / (1.f - near / far);
+		M(2,3) = -2.f * n / (1.f - n / f);
 	M(3,3) = 0.f;
 
 	return (M);
 }
 
-Mat4 perspective_matrix_inv(const CameraFrustum& f)
+Mat4 persp_matrix_inv(float ax, float ay, float sx, float sy, float n, float f)
 {
 	
-	assert(f.near != 0 && f.far != 0);
+	assert(n != 0 && f != 0);
 
-	const float inv_aspect_x = 1.f / f.aspect_x;
-	const float inv_aspect_y = 1.f / f.aspect_y;
-	const float shift_x = f.shift_x;
-	const float shift_y = f.shift_y;
-	const float inv_near = 1.f / f.near;
-	const float inv_far = 1.f / f.far;
+	const float inv_ax = 1.f / ax;
+	const float inv_ay = 1.f / ay;
+	const float inv_n = 1.f / n;
+	const float inv_f = 1.f / f;
 
 	Mat4 M;
 
 	/* col 0 */
-	M(0,0) = inv_aspect_x;
+	M(0,0) = inv_ax;
 	M(1,0) = 0.f;
 	M(2,0) = 0.f;
 	M(3,0) = 0.f;
 
 	/* col 1 */
 	M(0,1) = 0.f;
-	if constexpr( reversed_y) M(1,1) = -inv_aspect_y;
-	if constexpr(!reversed_y) M(1,1) = inv_aspect_y;
+	if constexpr( reversed_y) M(1,1) = -inv_ay;
+	if constexpr(!reversed_y) M(1,1) = inv_ay;
 	M(2,1) = 0.f;
 	M(3,1) = 0.f;
 
@@ -92,54 +101,47 @@ Mat4 perspective_matrix_inv(const CameraFrustum& f)
 	M(1,2) = 0.f;
 	M(2,2) = 0.f;
 	if constexpr( z_zero_one &&  reversed_z) 
-		M(3,2) = inv_near - inv_far;
+		M(3,2) = inv_n - inv_f;
 	if constexpr( z_zero_one && !reversed_z) 
-		M(3,2) = inv_far - inv_near;
+		M(3,2) = inv_f - inv_n;
 	if constexpr(!z_zero_one &&  reversed_z) 
-		M(3,2) = 0.5f * (inv_near - inv_far);
+		M(3,2) = 0.5f * (inv_n - inv_f);
 	if constexpr(!z_zero_one && !reversed_z) 
-		M(3,2) = 0.5f * (inv_far - inv_near);
+		M(3,2) = 0.5f * (inv_f - inv_n);
 
 	/* col 3 */
-	M(0,3) = shift_x * inv_aspect_x;
-	if constexpr( reversed_y) M(1,3) = -shift_y * inv_aspect_y;
-	if constexpr(!reversed_y) M(1,3) = +shift_y * inv_aspect_y;
+	M(0,3) = sx * inv_ax;
+	if constexpr( reversed_y) M(1,3) = -sy * inv_ay;
+	if constexpr(!reversed_y) M(1,3) = +sy * inv_ay;
 	M(2,3) = -1.f;
 	if constexpr( z_zero_one &&  reversed_z) 
-		M(3,3) = inv_far;
+		M(3,3) = inv_f;
 	if constexpr( z_zero_one && !reversed_z) 
-		M(3,3) = inv_near;
+		M(3,3) = inv_n;
 	if constexpr(!z_zero_one &&  reversed_z) 
-		M(3,3) = 0.5 * (inv_near + inv_far);
+		M(3,3) = 0.5 * (inv_n + inv_f);
 	if constexpr(!z_zero_one && !reversed_z) 
-		M(3,3) = 0.5 * (inv_near + inv_far);
+		M(3,3) = 0.5 * (inv_n + inv_f);
 
 	return (M);
 }
 
-Mat4 orthographic_matrix(const CameraFrustum& f)
+Mat4 ortho_matrix(float ax, float ay, float sx, float sy, float n, float f)
 {
-	assert(f.near != f.far);
-
-	const float aspect_x = f.aspect_x;
-	const float aspect_y = f.aspect_y;
-	const float shift_x = f.shift_x;
-	const float shift_y = f.shift_y;
-	const float near = f.near;
-	const float far = f.far;
+	assert(n != f);
 
 	Mat4 M;
 
 	/* col 0 */
-	M(0,0) = aspect_x;
+	M(0,0) = ax;
 	M(1,0) = 0.f;
 	M(2,0) = 0.f;
 	M(3,0) = 0.f;
 
 	/* col 1 */
 	M(0,1) = 0.f;
-	if constexpr( reversed_y) M(1,1) = -aspect_y;
-	if constexpr(!reversed_y) M(1,1) = +aspect_y;
+	if constexpr( reversed_y) M(1,1) = -ay;
+	if constexpr(!reversed_y) M(1,1) = +ay;
 	M(2,1) = 0.f;
 	M(3,1) = 0.f;
 
@@ -147,55 +149,51 @@ Mat4 orthographic_matrix(const CameraFrustum& f)
 	M(0,2) = 0.f;
 	M(1,2) = 0.f;
 	if constexpr( z_zero_one &&  reversed_z) 
-		M(2,2) = 1.0f / (far - near);
+		M(2,2) = 1.0f / (f - n);
 	if constexpr( z_zero_one && !reversed_z) 
-		M(2,2) = -1.0f / (far - near);
+		M(2,2) = -1.0f / (f - n);
 	if constexpr(!z_zero_one &&  reversed_z) 
-		M(2,2) = 2.0f / (far - near);
+		M(2,2) = 2.0f / (f - n);
 	if constexpr(!z_zero_one && !reversed_z) 
-		M(2,2) = -2.0f / (far - near);
+		M(2,2) = -2.0f / (f - n);
 	M(3,2) = 0.f;
 
 	/* col 3 */
-	M(0,3) = -shift_x;
-	if constexpr( reversed_y) M(1,3) = +shift_y;
-	if constexpr(!reversed_y) M(1,3) = -shift_y;
+	M(0,3) = -sx;
+	if constexpr( reversed_y) M(1,3) = +sy;
+	if constexpr(!reversed_y) M(1,3) = -sy;
 	if constexpr( z_zero_one &&  reversed_z) 
-		M(2,3) = 1.0f / (1.0f - near / far);
+		M(2,3) = 1.0f / (1.0f - n / f);
 	if constexpr( z_zero_one && !reversed_z) 
-		M(2,3) = -near / (far - near);
+		M(2,3) = -n / (f - n);
 	if constexpr(!z_zero_one &&  reversed_z) 
-		M(2,3) = (1.0f + near / far) / (1.0f - near / far);
+		M(2,3) = (1.0f + n / f) / (1.0f - n / f);
 	if constexpr(!z_zero_one && !reversed_z) 
-		M(2,3) = -(1.0f + near / far) / (1.0f - near / far);
+		M(2,3) = -(1.0f + n / f) / (1.0f - n / f);
 	M(3,3) = 1.f;
 	
 	return (M);
 }
 
-Mat4 orthographic_matrix_inv(const CameraFrustum& f)
+Mat4 ortho_matrix_inv(float ax, float ay, float sx, float sy, float n, float f)
 {
-	assert(f.near != f.far);
+	assert(n != f);
 
-	const float inv_aspect_x = 1.f / f.aspect_x;
-	const float inv_aspect_y = 1.f / f.aspect_y;
-	const float shift_x = f.shift_x;
-	const float shift_y = f.shift_y;
-	const float near = f.near;
-	const float far = f.far;
+	const float inv_ax = 1.f / ax;
+	const float inv_ay = 1.f / ay;
 
 	Mat4 M;
 
 	/* col 0 */
-	M(0,0) = inv_aspect_x;
+	M(0,0) = inv_ax;
 	M(1,0) = 0.f;
 	M(2,0) = 0.f;
 	M(3,0) = 0.f;
 
 	/* col 1 */
 	M(0,1) = 0.f;
-	if constexpr( reversed_y) M(1,1) = -inv_aspect_y;
-	if constexpr(!reversed_y) M(1,1) = +inv_aspect_y;
+	if constexpr( reversed_y) M(1,1) = -inv_ay;
+	if constexpr(!reversed_y) M(1,1) = +inv_ay;
 	M(2,1) = 0.f;
 	M(3,1) = 0.f;
 
@@ -203,27 +201,27 @@ Mat4 orthographic_matrix_inv(const CameraFrustum& f)
 	M(0,2) = 0.f;
 	M(1,2) = 0.f;
 	if constexpr( z_zero_one &&  reversed_z) 
-		M(2,2) = far - near;
+		M(2,2) = f - n;
 	if constexpr( z_zero_one && !reversed_z) 
-		M(2,2) = near - far;
+		M(2,2) = n - f;
 	if constexpr(!z_zero_one &&  reversed_z) 
-		M(2,2) = 0.5f * (far - near);
+		M(2,2) = 0.5f * (f - n);
 	if constexpr(!z_zero_one && !reversed_z) 
-		M(2,2) = 0.5f * (near - far);
+		M(2,2) = 0.5f * (n - f);
 	M(3,2) = 0.f;
 
 	/* col 3 */
-	M(0,3) = shift_x * inv_aspect_x;
-	if constexpr( reversed_y) M(1,3) = -shift_y * inv_aspect_y;
-	if constexpr(!reversed_y) M(1,3) = shift_y * inv_aspect_y;
+	M(0,3) = sx * inv_ax;
+	if constexpr( reversed_y) M(1,3) = -sy * inv_ay;
+	if constexpr(!reversed_y) M(1,3) = +sy * inv_ay;
 	if constexpr( z_zero_one &&  reversed_z) 
-		M(2,3) = -far;
+		M(2,3) = -f;
 	if constexpr( z_zero_one && !reversed_z) 
-		M(2,3) = -near;
+		M(2,3) = -n;
 	if constexpr(!z_zero_one &&  reversed_z) 
-		M(2,3) = -0.5f * (near + far);
+		M(2,3) = -0.5f * (n + f);
 	if constexpr(!z_zero_one && !reversed_z) 
-		M(2,3) = -0.5f * (near + far);
+		M(2,3) = -0.5f * (n + f);
 	M(3,3) = 1.f;
 	
 	return (M);

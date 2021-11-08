@@ -16,7 +16,9 @@ struct Frustum {
 };
 
 /**
- * Camera Frustum, a restricted class of frustum for which 
+ * Camera Frustum
+ *
+ * A restricted class of frustum for which 
  * l, r, t, b, n and f can be associated to scalar values. 
  *
  * The physical parameters of interest in the camera are:
@@ -40,15 +42,19 @@ struct Frustum {
  *	shift_y = (t+b)/(t-b).
  */  
 struct CameraFrustum {
-	float aspect_x;
-	float aspect_y;
-	float shift_x = 0.f;
-	float shift_y = 0.f;
-	float near    = 0.01f;
-	float far     = 1000.f;
+	
+	float aspect_x = 1.f;
+	float aspect_y = 1.f;
+	float shift_x  = 0.f;
+	float shift_y  = 0.f;
+	float near     = 0.01f;
+	float far      = 1000.f;
+	bool  is_ortho = false;
 };
 
-Mat4 perspective_matrix(const CameraFrustum& f);
-Mat4 orthographic_matrix(const CameraFrustum& f);
-Mat4 perspective_matrix_inv(const CameraFrustum& f);
-Mat4 orthographic_matrix_inv(const CameraFrustum& f);
+Mat4 projection_matrix(const CameraFrustum& f);
+
+Mat4 persp_matrix(float ax, float ay, float sx, float sy, float n, float f);
+Mat4 ortho_matrix(float ax, float ay, float sx, float sy, float n, float f);
+Mat4 persp_matrix_inv(float ax, float ay, float sx, float sy, float n, float f);
+Mat4 ortho_matrix_inv(float ax, float ay, float sx, float sy, float n, float f);

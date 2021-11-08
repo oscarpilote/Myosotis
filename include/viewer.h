@@ -1,23 +1,17 @@
-#ifndef _VIEWER3D_H
-#define _VIEWER3D_H
+#pragma once
 
 #include <GLFW/glfw3.h>
 
-#include "Camera.h"
-#include "Trackball.h"
+#include "camera.h"
+#include "trackball.h"
 
 struct Viewer3D {
 	
-	GLFWwindow* Window;
-	FCamera Camera;
-	FTrackball Trackball;
+	GLFWwindow* window;
+	Camera camera;
+	Trackball trackball;
 	
-	bool bFollowMouse;
-	FVec3 TargetPosition;
-	FQuat SavedRotation;
-	
-	bool Init(int Width, int Height, const char *Title);
-	void ProcessKeys();
+	bool init(int width, int height, const char *title);
+	void process_keys();
+	void process_mouse();
 };
-
-#endif /* _VIEWER3D_H */
