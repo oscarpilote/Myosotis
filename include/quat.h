@@ -19,10 +19,6 @@ struct alignas(4 * sizeof(T)) TQuat {
 	};
 	T w;
 
-	/* Constructors */
-	TQuat() = default;
-	constexpr TQuat(TVec3<T> xyz, T w);
-	
 	/* Static Helpers */
 	static constexpr TQuat Identity {TVec3<T>::Zero, 1};
 
@@ -30,7 +26,7 @@ struct alignas(4 * sizeof(T)) TQuat {
 	TQuat& operator*= (const TQuat& a);
 	TQuat& operator*= (const T& t);
 	TQuat conj() const;
-	TQuat inverse() const;
+	TQuat inv() const;
 	TQuat& normalise();
 };
 
@@ -64,9 +60,6 @@ inline T norm(const TQuat<T>& a);
 /* Methods implementation */
 
 template <typename T>
-constexpr TQuat<T>::TQuat(TVec3<T> xyz, T w) : xyz{xyz}, w{w} {};
-
-template <typename T>
 inline TQuat<T>& TQuat<T>::operator*= (const TQuat& a)
 {
 	/* TODO : better ? */
@@ -89,7 +82,7 @@ inline TQuat<T> TQuat<T>::conj() const
 }
 
 template <typename T>
-inline TQuat<T> TQuat<T>::inverse() const
+inline TQuat<T> TQuat<T>::inv() const
 {
 	return this->conj() *= (1.f / dot(*this, *this));
 }

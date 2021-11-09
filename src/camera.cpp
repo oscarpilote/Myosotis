@@ -1,12 +1,12 @@
 #include <assert.h>
 #include <math.h>
 
-#include "gfx_api_defs.h"
 #include "camera.h"
-#include "quat.h"
+#include "ndc.h"
 #include "vec3.h"
+#include "quat.h"
 #include "mat4.h"
-#include "affine.h"
+#include "geometry.h"
 #include "transform.h"
 
 
@@ -178,24 +178,24 @@ Mat4 Camera::clip_to_world() const
 	return compose(clip_to_view(), view_to_world());
 }
 
-Line Camera::view_ray_at (float x, float y) const
+Ray Camera::view_ray_at (float x, float y) const
 {
 	assert(0.f <= x && x <= 1.f && 0.f <= y && y <= 1.f);
 
 	Vec3 ndc = nwd_to_ndc(x, y, 0.5f);
 	Vec3 v = transform(clip_to_view(), ndc);
 	
-	return Line(Point::Origin, Point(v));
+	return {.start = Vec3::Zero, .dir = v};
 }
 
-Line Camera::world_ray_at(float x, float y) const
+Ray Camera::world_ray_at(float x, float y) const
 {
 	assert(0.f <= x && x <= 1.f && 0.f <= y && y <= 1.f);
 
 	Vec3 ndc = nwd_to_ndc(x, y, 0.5f);
 	Vec3 v = transform(clip_to_world(), ndc);
 	
-	return Line(position, Point(v));
+	return {.start = position, .dir = v};
 }
 
 Vec3 Camera::view_coord_at (float x, float y, float depth) const

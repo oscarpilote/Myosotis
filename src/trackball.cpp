@@ -1,6 +1,6 @@
 #include "vec3.h"
 #include "quat.h"
-#include "transform.h"
+#include "geometry.h"
 #include "trackball.h"
 
 #include <stdio.h>

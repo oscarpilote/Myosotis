@@ -11,10 +11,6 @@ struct TVec3 {
 	T y;
 	T z;
 	
-	/* Constructors */
-	TVec3() = default; 
-	constexpr TVec3(T x, T y, T z);
-
 	/* Index Accessor */
 	T& operator[] (int n);
 	const T& operator[] (int n) const;
@@ -59,9 +55,6 @@ template <typename T>
 inline T norm(const TVec3<T> a);
 
 /* Functions implementations */
-
-template <typename T>
-constexpr TVec3<T>::TVec3(T x, T y, T z) : x{x}, y{y}, z{z} {}
 
 template <typename T>
 inline const T& TVec3<T>::operator[](int n) const

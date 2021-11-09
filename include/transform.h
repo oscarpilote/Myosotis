@@ -1,30 +1,52 @@
 #pragma once
 
-#include "affine.h"
+#include "vec3.h"
+#include "vec4.h"
 #include "quat.h"
 #include "mat4.h"
 
-template <typename T> struct TRigid;
-typedef TRigid<float> Rigid;
-
+/**
+ * An orientation preserving isometry in 3D space.
+ *
+ * Short named as Rigid Transform.
+ * Corresponds to the composition (in order) of
+ * a rotation and a translation.
+ */
 template <typename T>
-struct TRigid {
+struct TRigT {
 
 	TQuat<T> rot;
 	TVec3<T> trans;
 
-	TRigid   inv() const;
+	TRigT    inv() const;
 	TMat4<T> as_matrix() const;
 
-	static constexpr TRigid Identity = {TQuat<T>::Identity, TVec3<T>::Zero};
+	static constexpr TRigT Identity = {TQuat<T>::Identity, TVec3<T>::Zero};
 };
+typedef TRigT<float> RigT;
 
+/* Free functions declarations */
+
+/**
+ * Rotate a vector by a quaternion, i.e. v' = qvq^*.
+ * Quaternion q is assumed normalized (if not divise the result by dot(q, q^*)).
+ */
 template <typename T>
 TVec3<T> rotate(const TVec3<T>& v, const TQuat<T>& q);  
 
+/**
+ * Unrotate a vector by a quaternion : i.e. v' = q^*vq.
+ *
+ * Quaternion q is assumed normalized (if not divise the result by dot(q, q^*)).
+ */
 template <typename T>
 TVec3<T> unrotate(const TVec3<T>& v, const TQuat<T>& q);  
 
+/**
+ * Rotate a point by a quaternion using a given center of rotation.
+ *
+ * Quaternion q is assumed normalized (if not divise the result by dot(q, q^*)).
+ */
 template <typename T>
 TVec3<T> orbit(const TVec3<T>& point, const TQuat<T>& q, const TVec3<T>& pivot);
 
@@ -32,13 +54,13 @@ template <typename T>
 TQuat<T> compose(const TQuat<T>& q1, const TQuat<T>& q2);
 
 template <typename T>
-TRigid<T> compose(const TQuat<T>& q, const TVec3<T>& v);
+TRigT<T> compose(const TQuat<T>& q, const TVec3<T>& v);
 
 template <typename T>
-TRigid<T> compose(const TVec3<T>& v, const TQuat<T>& q);
+TRigT<T> compose(const TVec3<T>& v, const TQuat<T>& q);
 
 template <typename T>
-TRigid<T> compose(const TRigid<T>& A, const TRigid<T>& B);
+TRigT<T> compose(const TRigT<T>& A, const TRigT<T>& B);
 
 template <typename T>
 TMat4<T> compose(const TMat4<T>& A, const TMat4<T>& B);
@@ -47,19 +69,20 @@ template <typename T>
 TVec3<T> transform(const TMat4<T>& A, const TVec3<T>& v); 
 
 template <typename T>
-TQuat<T> great_circle_rotation(const TVec3<T>& from, const TVec3<T>& to);
+TVec4<T> transform(const TMat4<T>& A, const TVec4<T>& v); 
+
 
 /* Implementations */
 
 template <typename T>
-TRigid<T> TRigid<T>::inv() const
+TRigT<T> TRigT<T>::inv() const
 {
 	return {-rot, -unrotate(trans, rot)};
 
 }
 
 template <typename T>
-TMat4<T> TRigid<T>::as_matrix() const
+TMat4<T> TRigT<T>::as_matrix() const
 {
 	TMat4<T> M;
 
@@ -129,19 +152,19 @@ TQuat<T> compose(const TQuat<T>& q1, const TQuat<T>& q2)
 }
 
 template <typename T>
-TRigid<T> compose(const TQuat<T>& q, const TVec3<T>& v)
+TRigT<T> compose(const TQuat<T>& q, const TVec3<T>& v)
 {
 	return {q, v};
 }
 
 template <typename T>
-TRigid<T> compose(const TVec3<T>& v, const TQuat<T>& q)
+TRigT<T> compose(const TVec3<T>& v, const TQuat<T>& q)
 {
 	return {q, rotate(v, q)};
 }
 
 template <typename T>
-TRigid<T> compose(const TRigid<T>& A, const TRigid<T>& B)
+TRigT<T> compose(const TRigT<T>& A, const TRigT<T>& B)
 {
 	return {B.rot * A.rot, rotate(A.trans, B.rot) + B.trans};
 }
@@ -162,25 +185,10 @@ TVec3<T> transform(const TMat4<T>& A, const TVec3<T>& v)
 }
 
 template <typename T>
-inline TQuat<T> great_circle_rotation(const TVec3<T>& from, const TVec3<T>& to)
+TVec4<T> transform(const TMat4<T>& A, const TVec4<T>& v)
 {
-	assert(approx_equal<T>(norm(from), 1));
-	assert(approx_equal<T>(norm(to), 1));
-
-	T cos_angle = dot(from, to);
-	if (approx_equal<T>(cos_angle, -1)) 
-	{
-		return {{0, 0, 1}, 0};
-	}
-
-	T cos_half_angle = sqrt((1.f + cos_angle) / 2.f);
-
-	assert(cos_half_angle != 0);
-	
-	T w = cos_half_angle;
-	TVec3<T> xyz = cross(from, to) * (0.5f / cos_half_angle);
-	
-	return {xyz, w};
+	return {A(0) * v[0] + A(1) * v[1] + A(2) * v[2] + A(3) * v[3]};
 }
+
 
 

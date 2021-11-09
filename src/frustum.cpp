@@ -1,7 +1,8 @@
 #include <assert.h>
 
+#include "ndc.h" /* reversed_y, reversed_z, z_zero_one */
+
 #include "frustum.h"
-#include "gfx_api_defs.h" /* NDC_REVERSED_Y NDC_REVERSED_Z NDC_Z_ZERO_ONE */
 #include "mat4.h"
 
 Mat4 projection_matrix(const CameraFrustum& frustum)

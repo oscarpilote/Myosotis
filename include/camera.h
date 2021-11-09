@@ -4,7 +4,7 @@
 #include "vec3.h"
 #include "quat.h"
 #include "mat4.h"
-#include "affine.h"
+#include "geometry.h"
 #include "frustum.h"
 
 
@@ -79,7 +79,9 @@ public:
 	 */
 	Camera& set_orthographic(bool is_ortho);
 
-	/* Get or Set position and rotation. */
+	/**
+	* Get or Set camera position and rotation. 
+	*/
 	Vec3 get_position() const;
 	Quat get_rotation() const;
 	Camera& set_position(const Vec3& position);
@@ -132,13 +134,22 @@ public:
 	Mat4 clip_to_world() const;
 
 	/**
-	 * TODO 
+	 * View ray or world ray starting from the camera and in the direction 
+	 * corresponding to the given normalised screen coordinates.
+	 *
+	 * @param x - normalised horizontal screen coord (left = 0, right = 1)
+	 * @param y - normalised vertical screen coord (top = 0, bottom = 1)
 	 */
-	Line view_ray_at (float x, float y) const;
-	Line world_ray_at(float x, float y) const;
+	Ray view_ray_at (float x, float y) const;
+	Ray world_ray_at(float x, float y) const;
 
 	/*
-	 * TODO
+	 * Compute view or world coord based on normalised
+	 * screen coord and normalised depth.
+	 *
+	 * @param x - normalised horizontal screen coord (left = 0, right = 1)
+	 * @param y - normalised vertical screen coord (top = 0, bottom = 1)
+	 * @param depth - normalised depth (as read from depth buffer)
 	 */
 	Vec3 view_coord_at (float x, float y, float depth) const;
 	Vec3 world_coord_at(float x, float y, float depth) const;
