@@ -95,24 +95,21 @@ HashTable<K, V, H>::~HashTable()
 }
 
 template<typename K, typename V, typename H>
-bool 
-HashTable<K, V, H>::load_factor_ok() const
+bool HashTable<K, V, H>::load_factor_ok() const
 {
 	/* 66% load factor limit */
 	return (buckets > size + size / 2);
-};
+}
 
 template<typename K, typename V, typename H>
-inline V* 
-HashTable<K, V, H>::get(K key) const
+inline V* HashTable<K, V, H>::get(K key) const
 {
 	size_t bucket = hash_lookup(keys, buckets, hasher, key);
 	return hasher.is_empty(keys[bucket]) ? nullptr : &vals[bucket];
 }
 
 template<typename K, typename V, typename H>
-inline void 
-HashTable<K, V, H>::set_at(K key, V val)
+inline void HashTable<K, V, H>::set_at(K key, V val)
 {
 	size_t bucket = hash_lookup(keys, buckets, hasher, key);
 	vals[bucket] = val;
@@ -130,11 +127,10 @@ template<typename K, typename V, typename H>
 float HashTable<K, V, H>::load_factor() const
 {
 	return static_cast<float>(size) / buckets;
-};
+}
 
 template <typename K, typename V, typename H>
-void 
-HashTable<K, V, H>::grow()
+void HashTable<K, V, H>::grow()
 {
 	size_t new_buckets = 2 * buckets;
 

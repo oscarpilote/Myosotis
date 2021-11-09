@@ -5,7 +5,6 @@ project(Myosotis VERSION 0.1)
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 #set( CMAKE_VERBOSE_MAKEFILE ON )
-set( CMAKE_CXX_STANDARD 17 )
 
 configure_file(
 	${PROJECT_SOURCE_DIR}/config/version.h.in

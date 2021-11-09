@@ -8,21 +8,39 @@ Mat4 projection_matrix(const CameraFrustum& frustum)
 {
 	if (!frustum.is_ortho)
 	{
-		return persp_matrix(
+		return perspective_matrix(
 				frustum.aspect_x, frustum.aspect_y,
 				frustum.shift_x, frustum.shift_y,
 				frustum.near, frustum.far);
 	}
 	else 
 	{
-		return ortho_matrix(
+		return orthographic_matrix(
 				frustum.aspect_x, frustum.aspect_y,
 				frustum.shift_x, frustum.shift_y,
 				frustum.near, frustum.far);
 	}
 }
 
-Mat4 persp_matrix(float ax, float ay, float sx, float sy, float n, float f)
+Mat4 projection_matrix_inv(const CameraFrustum& frustum)
+{
+	if (!frustum.is_ortho)
+	{
+		return perspective_matrix_inv(
+				frustum.aspect_x, frustum.aspect_y,
+				frustum.shift_x, frustum.shift_y,
+				frustum.near, frustum.far);
+	}
+	else 
+	{
+		return orthographic_matrix_inv(
+				frustum.aspect_x, frustum.aspect_y,
+				frustum.shift_x, frustum.shift_y,
+				frustum.near, frustum.far);
+	}
+}
+
+Mat4 perspective_matrix(float ax, float ay, float sx, float sy, float n, float f)
 {
 	assert(n != f);
 	
@@ -71,7 +89,7 @@ Mat4 persp_matrix(float ax, float ay, float sx, float sy, float n, float f)
 	return (M);
 }
 
-Mat4 persp_matrix_inv(float ax, float ay, float sx, float sy, float n, float f)
+Mat4 perspective_matrix_inv(float ax, float ay, float sx, float sy, float n, float f)
 {
 	
 	assert(n != 0 && f != 0);
@@ -126,7 +144,7 @@ Mat4 persp_matrix_inv(float ax, float ay, float sx, float sy, float n, float f)
 	return (M);
 }
 
-Mat4 ortho_matrix(float ax, float ay, float sx, float sy, float n, float f)
+Mat4 orthographic_matrix(float ax, float ay, float sx, float sy, float n, float f)
 {
 	assert(n != f);
 
@@ -175,7 +193,7 @@ Mat4 ortho_matrix(float ax, float ay, float sx, float sy, float n, float f)
 	return (M);
 }
 
-Mat4 ortho_matrix_inv(float ax, float ay, float sx, float sy, float n, float f)
+Mat4 orthographic_matrix_inv(float ax, float ay, float sx, float sy, float n, float f)
 {
 	assert(n != f);
 

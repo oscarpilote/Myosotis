@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <math.h>
 
+#include "gfx_api_defs.h"
 #include "camera.h"
 #include "quat.h"
 #include "vec3.h"
@@ -152,6 +153,11 @@ Mat4 Camera::view_to_clip() const
 	return projection_matrix(frustum);
 }
 
+Mat4 Camera::clip_to_view() const
+{
+	return projection_matrix_inv(frustum);
+}
+
 Mat4 Camera::world_to_view() const
 {
 	return compose(rotation, position).as_matrix();
@@ -167,23 +173,49 @@ Mat4 Camera::world_to_clip() const
 	return compose(world_to_view(), view_to_clip());
 }
 
+Mat4 Camera::clip_to_world() const
+{
+	return compose(clip_to_view(), view_to_world());
+}
+
 Line Camera::view_ray_at (float x, float y) const
 {
-	/* TODO */
+	assert(0.f <= x && x <= 1.f && 0.f <= y && y <= 1.f);
+
+	Vec3 ndc = nwd_to_ndc(x, y, 0.5f);
+	Vec3 v = transform(clip_to_view(), ndc);
+	
+	return Line(Point::Origin, Point(v));
 }
 
 Line Camera::world_ray_at(float x, float y) const
 {
-	/* TODO */
+	assert(0.f <= x && x <= 1.f && 0.f <= y && y <= 1.f);
+
+	Vec3 ndc = nwd_to_ndc(x, y, 0.5f);
+	Vec3 v = transform(clip_to_world(), ndc);
+	
+	return Line(position, Point(v));
 }
 
 Vec3 Camera::view_coord_at (float x, float y, float depth) const
 {
-	/* TODO */
+	assert(0.f <= x && x <= 1.f && 0.f <= y && y <= 1.f);
+	assert(0.f <= depth && depth <= 1.f);
+
+	Vec3 ndc = nwd_to_ndc(x, y, depth);
+	
+	return transform(clip_to_view(), ndc);
+
 }
 
 Vec3 Camera::world_coord_at(float x, float y, float depth) const
 {
-	/* TODO */
+	assert(0.f <= x && x <= 1.f && 0.f <= y && y <= 1.f);
+	assert(0.f <= depth && depth <= 1.f);
+
+	Vec3 ndc = nwd_to_ndc(x, y, depth);
+	
+	return transform(clip_to_world(), ndc);
 }
 

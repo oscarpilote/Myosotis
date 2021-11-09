@@ -56,8 +56,9 @@ struct CameraFrustum {
 };
 
 Mat4 projection_matrix(const CameraFrustum& f);
+Mat4 projection_matrix_inv(const CameraFrustum& f);
 
-Mat4 persp_matrix(float ax, float ay, float sx, float sy, float n, float f);
-Mat4 ortho_matrix(float ax, float ay, float sx, float sy, float n, float f);
-Mat4 persp_matrix_inv(float ax, float ay, float sx, float sy, float n, float f);
-Mat4 ortho_matrix_inv(float ax, float ay, float sx, float sy, float n, float f);
+Mat4 perspective_matrix     (float ax, float ay, float sx, float sy, float n, float f);
+Mat4 perspective_matrix_inv (float ax, float ay, float sx, float sy, float n, float f);
+Mat4 orthographic_matrix    (float ax, float ay, float sx, float sy, float n, float f);
+Mat4 orthographic_matrix_inv(float ax, float ay, float sx, float sy, float n, float f);

@@ -9,7 +9,14 @@ template <typename T>
 struct alignas(4 * sizeof(T)) TQuat {
 	
 	/* Members */
-	TVec3<T> xyz;
+	union {
+		TVec3<T> xyz;
+		struct {
+			T x;
+			T y;
+			T z;
+		};
+	};
 	T w;
 
 	/* Constructors */

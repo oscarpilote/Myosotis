@@ -125,9 +125,11 @@ public:
 	 * NB) Matrices are recorded in column major order in memory.
 	 */
 	Mat4 view_to_clip()  const;
+	Mat4 clip_to_view()  const;
 	Mat4 world_to_view() const;
 	Mat4 view_to_world() const;
 	Mat4 world_to_clip() const;
+	Mat4 clip_to_world() const;
 
 	/**
 	 * TODO 

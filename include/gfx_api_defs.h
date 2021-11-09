@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vec3.h"
+
 /* The various graphic API do NOT agree on the definition
  * of Normalized Device Coordinates (hereafter NDC).
  * In the sequel :
@@ -50,4 +52,19 @@
 constexpr bool reversed_y = NDC_REVERSED_Y ? true : false;
 constexpr bool reversed_z = NDC_REVERSED_Z ? true : false;
 constexpr bool z_zero_one = NDC_Z_ZERO_ONE ? true : false;
+
+constexpr Vec3 nwd_to_ndc(float x, float y, float depth)
+{
+	Vec3 ndc;
+
+	ndc.x = 2.f * x - 1.f;
+	if constexpr( reversed_y) ndc.y = 2.f * y - 1.f;
+	if constexpr(!reversed_y) ndc.y = 1.f - 2.f * y;
+	if constexpr( z_zero_one &&  reversed_z) ndc.z = 1.f - depth;
+	if constexpr( z_zero_one && !reversed_z) ndc.z = depth;
+	if constexpr(!z_zero_one &&  reversed_z) ndc.z = 1.f - 2.f * depth;
+	if constexpr(!z_zero_one && !reversed_z) ndc.z = 2.f * depth - 1.f;
+
+	return (ndc);
+}
 
