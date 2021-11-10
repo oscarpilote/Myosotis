@@ -1,47 +1,62 @@
+#include "trackball.h"
 #include "vec3.h"
 #include "quat.h"
 #include "geometry.h"
-#include "trackball.h"
+#include "camera.h"
 
-#include <stdio.h>
-
-Trackball::Trackball(float width, float height, float radius) : 
-	width{width}, height{height}, radius{radius}, 
-	saved_position{0.f, 0.f, 1.f} {}
-
-
-/* Using (inverse) stereographic projection from a sphere of given
- * radius and tangent to the screen plane at position (width/2, height/2).
- * Click coordinates are assumed to go increasing from left to right
- * and from top to bottom, so (0,0) is upper left. */
-Vec3 Trackball::vect_at_click(float x, float y) const
+Vec3 screen_trackball(float px, float py, float width, float height, 
+			float radius)
 {
-	float X = (x - 0.5f * width) / radius;
-	float Y = (0.5 * height - y) / radius;
-	float a = 2.f / (1.f + X * X + Y * Y);
+	float x = (px - 0.5f * width) / radius;
+	float y = (0.5f * height - py) / radius;
+	float a = 2.f / (1.f + x * x + y * y);
 
-	Vec3 v {a * X, a * Y, -1.f + a};
+	Vec3 v {a * x, a * y, -1.f + a};
 	
 	assert(approx_equal<float>(norm(v), 1.f));
 
 	return v;
 }
 
-void Trackball::track_from(float x, float y)
+Vec3 world_trackball(float x, float y, const Vec3& center, float radius, 
+			const Camera& camera)
 {
-	saved_position = vect_at_click(x, y);
-}
+	Vec3 view_dir = center - camera.get_position();
+	float len = norm(view_dir);
 
-Quat Trackball::get_rotation_to(float x, float y) const
-{
-	Vec3 new_position = vect_at_click(x, y);
+	if (len == 0) 
+	{
+		return Vec3::ZAxis;
+	}
+	view_dir *= (1.f / len);
 
-	return great_circle_rotation(saved_position, new_position);
-}
+	Vec3 tangent_pt = center - radius * view_dir;
+	Plane plane = plane_from_normal_and_point(view_dir, tangent_pt);
+	Ray ray = camera.world_ray_at(x, y);
+	Vec4 test = ray_plane_intersection(ray, plane);
 
-void Trackball::resize(float width, float height, float radius)
-{
-	this->width = width;
-	this->height = height;
-	this->radius = radius;
+	if (test.w == 0)
+	{
+		return Vec3::ZAxis;
+	}
+
+	Vec3 touch = test.xyz * (1.f / test.w);
+
+	/* Stereographic projection from the point diamtrically
+	 * opposite to tgt.
+	 * Computation : shoot ray from stereographic center ( = center + 
+	 * radius * view_dir) towards touch, and stop when the distance 
+	 * towards center becomes equal to radius. Since we shoot from the 
+	 * sphere boundary there is no second order equation to solve, only 
+	 * first order.
+	 */
+	Vec3 sph_dir = (touch - center) * (1.f / radius);
+	float tmp = dot(view_dir, sph_dir);
+	float s = 2.f * (tmp - 1) / (dot(sph_dir, sph_dir) - 2.f * tmp + 1.f);
+
+	Vec3 v = view_dir + s * (view_dir - sph_dir);
+	
+	assert(approx_equal<float>(norm(v), 1.f));
+
+	return v;
 }

@@ -43,10 +43,15 @@ int main(int argc, char **argv)
 	}
 
 	while (!glfwWindowShouldClose(viewer.window)) {
-		viewer.process_keys();
-		glfwSwapBuffers(viewer.window);
+		
 		glfwPollEvents();
+		viewer.process_keys();
+	
+		glfwSwapBuffers(viewer.window);
+	
 	}
-	glfwTerminate();
-	return EXIT_SUCCESS;
+
+	close_window_system();
+	
+	return (EXIT_SUCCESS);
 }

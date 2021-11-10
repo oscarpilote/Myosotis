@@ -54,6 +54,9 @@ inline TVec3<T> cross(const TVec3<T>& a, const TVec3<T>& b);
 template <typename T>
 inline T norm(const TVec3<T> a);
 
+template <typename T>
+TVec3<T> normalized(const TVec3<T>& a);
+
 /* Functions implementations */
 
 template <typename T>
@@ -154,4 +157,12 @@ template <typename T>
 inline T norm(const TVec3<T> a)
 {
 	return sqrt(dot(a,a));
+}
+
+template <typename T>
+TVec3<T> normalized(const TVec3<T>& a)
+{
+	T len = norm(a);
+	assert(len != 0);
+	return a * (1.f / len);
 }

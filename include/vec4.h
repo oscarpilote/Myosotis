@@ -3,13 +3,20 @@
 #include <assert.h>
 #include <cmath>
 
+#include "vec3.h"
+
 template <typename T>
 struct alignas(4 * sizeof(T)) TVec4 {
 	
 	/* Members */
-	T x;
-	T y;
-	T z;
+	union {
+		TVec3<T> xyz;
+		struct {
+			T x;
+			T y;
+			T z;
+		};
+	};
 	T w;
 	
 	/* Index Accessor */
@@ -26,7 +33,6 @@ struct alignas(4 * sizeof(T)) TVec4 {
 	/* Static members */
 	static const TVec4 Zero;
 };
-
 typedef TVec4<float> Vec4;
 
 /* Free functions declarations */
