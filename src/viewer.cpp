@@ -81,6 +81,7 @@ void Viewer3D::process_keys()
 	{
 		glfwSetWindowShouldClose(window, 1);
 	}
+	/* Further key controls go here */
 }
 
 void Viewer3D::mouse_pressed(float px, float py, int button, int mods)
@@ -116,4 +117,3 @@ void Viewer3D::mouse_move(float px, float py)
 void Viewer3D::mouse_scroll(float xoffset, float yoffset)
 {
 }
-

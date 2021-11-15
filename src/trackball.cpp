@@ -30,10 +30,10 @@ Vec3 world_trackball(float x, float y, const Vec3& center, float radius,
 	}
 	view_dir *= (1.f / len);
 
-	Vec3 tangent_pt = center - radius * view_dir;
-	Plane plane = plane_from_normal_and_point(view_dir, tangent_pt);
+	Vec3 nearest = center - radius * view_dir;
+	Plane tg_plane = plane_from_normal_and_point(view_dir, nearest);
 	Ray ray = camera.world_ray_at(x, y);
-	Vec4 test = ray_plane_intersection(ray, plane);
+	Vec4 test = ray_plane_intersection(ray, tg_plane);
 
 	if (test.w == 0)
 	{
@@ -42,8 +42,8 @@ Vec3 world_trackball(float x, float y, const Vec3& center, float radius,
 
 	Vec3 touch = test.xyz * (1.f / test.w);
 
-	/* Stereographic projection from the point diamtrically
-	 * opposite to tgt.
+	/* Stereographic projection, from the point diametrically
+	 * opposite to nearest, and to the tangent plane at nearest.
 	 * Computation : shoot ray from stereographic center ( = center + 
 	 * radius * view_dir) towards touch, and stop when the distance 
 	 * towards center becomes equal to radius. Since we shoot from the 
