@@ -4,6 +4,7 @@
 
 #include "version.h"
 #include "viewer.h"
+#include "mesh_io.h"
 
 bool init_window_system()
 {
@@ -25,6 +26,10 @@ void close_window_system()
 
 int main(int argc, char **argv)
 {
+	
+	Mesh m = obj_to_mesh(argv[1]);
+
+	return 0;
 
 	if (!init_window_system())
 	{

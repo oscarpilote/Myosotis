@@ -8,6 +8,8 @@ add_executable(main
 	camera.cpp
 	frustum.cpp
 	trackball.cpp
+	mesh_io.cpp
+	../extern/meshoptimizer/src/indexgenerator.cpp
 	)
 
 target_compile_features(main PUBLIC cxx_std_20)

@@ -6,22 +6,38 @@
 #define ARRAY_FIRST_CAPACITY 8
 
 template <typename T>
-struct Array {
+struct TArray {
+	/**
+	 * Members
+	 */
 	size_t size;
 	size_t capacity;
 	T *data;
-	Array();
-	~Array();
+	/**
+	 * Methods
+	 */
+	TArray();
+	TArray(size_t cap);
+	~TArray();
 	T& operator[] (size_t i);
 	const T& operator[] (size_t i) const;
 	void push_back(const T &t);
+	void resize(size_t size);
 };
 
 template< typename T>
-inline Array<T>::Array() : size{0}, capacity{0}, data{nullptr} {}
+TArray<T>::TArray(): size{0}, capacity{0}, data{nullptr} {}
+
+template <typename T>
+TArray<T>::TArray(size_t cap): size{0}
+{
+	data = static_cast<T*>(malloc(cap * sizeof(T)));
+	capacity = cap;
+	size = cap;
+};
 
 template<typename T>
-inline Array<T>::~Array()
+inline TArray<T>::~TArray()
 {
 	size = 0;
 	capacity = 0;
@@ -29,21 +45,21 @@ inline Array<T>::~Array()
 }
 
 template<typename T>
-inline T& Array<T>::operator[](size_t i)
+inline T& TArray<T>::operator[](size_t i)
 {
 	assert(i < size);
 	return (data[i]);
 }
 
 template<typename T>
-inline const T& Array<T>::operator[](size_t i) const
+inline const T& TArray<T>::operator[](size_t i) const
 {
 	assert(i < size);
 	return (data[i]);
 }
 
 template<typename T>
-inline void Array<T>::push_back(const T &t)
+inline void TArray<T>::push_back(const T &t)
 {
 	if (size >= capacity) {
 		capacity = capacity < ARRAY_FIRST_CAPACITY ? 
@@ -53,5 +69,18 @@ inline void Array<T>::push_back(const T &t)
 	data[size++] = t;
 }
 
+template<typename T>
+void TArray<T>::resize(size_t size)
+{
+	this->size = size;
+	
+	if (size > capacity)
+	{
+		data = (data != nullptr) ? 
+			static_cast<T*>(realloc(data, size * sizeof(T))) :
+			static_cast<T*>(malloc(size * sizeof(T)));
+		capacity = size;
+	}
+}
 
 
