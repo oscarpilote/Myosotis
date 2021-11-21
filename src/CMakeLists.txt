@@ -9,7 +9,7 @@ add_executable(main
 	frustum.cpp
 	trackball.cpp
 	mesh_io.cpp
-	../extern/meshoptimizer/src/indexgenerator.cpp
+	../extern/indexgenerator.cpp
 	)
 
 target_compile_features(main PUBLIC cxx_std_20)

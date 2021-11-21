@@ -11,9 +11,10 @@ struct TVec2 {
 	T y;
 
 	/* Constructors */
-	//TVec2() = default;
-	//constexpr TVec2(T x, T y);
-	//explicit TVec2(const T* t);
+	constexpr TVec2() = default;
+	constexpr TVec2(const TVec2& a);
+	constexpr TVec2(T x, T y);
+	explicit TVec2(const T* t);
 
 	/* Index Accessor */
 	T& operator[] (int n);
@@ -62,14 +63,14 @@ TVec2<T> normalized(const TVec2<T>& a);
 
 /* Functions implementations */
 
-//template <typename T>
-//inline constexpr TVec2<T>::TVec2(T x, T y): x{x}, y{y} {} 
+template <typename T>
+inline constexpr TVec2<T>::TVec2(const TVec2<T>& a): x{a.x}, y{a.y} {} 
 
-//template <typename T>
-//inline TVec2<T>::TVec2(const T* t) {
-//	x = t[0];
-//	y = t[1];
-//}
+template <typename T>
+inline constexpr TVec2<T>::TVec2(T x, T y): x{x}, y{y} {} 
+
+template <typename T>
+inline TVec2<T>::TVec2(const T* t): x{t[0]}, y{t[1]} {}
 
 template <typename T>
 inline const T& TVec2<T>::operator[](int n) const

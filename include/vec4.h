@@ -19,6 +19,13 @@ struct alignas(4 * sizeof(T)) TVec4 {
 	};
 	T w;
 	
+	/* Constructors */
+	constexpr TVec4() = default;
+	constexpr TVec4(const TVec4& a);
+	constexpr TVec4(T x, T y, T z, T w);
+	constexpr TVec4(const TVec3<T>& xyz, T w);
+	explicit  TVec4(const T* t);
+	
 	/* Index Accessor */
 	T& operator[] (int n);
 	const T& operator[] (int n) const;
@@ -61,6 +68,19 @@ template <typename T>
 const TVec4<T> TVec4<T>::Zero  {0, 0, 0};
 
 /* Functions implementations */
+
+template <typename T>
+inline constexpr TVec4<T>::TVec4(const TVec4<T>& a): 
+	x{a.x}, y{a.y}, z{a.z}, w{a.w} {} 
+
+template <typename T>
+inline constexpr TVec4<T>::TVec4(T x, T y, T z, T w): x{x}, y{y}, z{z}, w{w} {} 
+
+template <typename T>
+inline constexpr TVec4<T>::TVec4(const TVec3<T>& xyz, T w): xyz{xyz}, w{w} {} 
+
+template <typename T>
+inline TVec4<T>::TVec4(const T* t): x{t[0]}, y{t[1]}, z{t[2]}, w{t[3]} {}
 
 template <typename T>
 inline const T& TVec4<T>::operator[](int n) const

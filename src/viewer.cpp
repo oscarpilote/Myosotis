@@ -1,10 +1,14 @@
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #include <GLFW/glfw3.h>
 
 #include "viewer.h"
 #include "camera.h"
 #include "trackball.h"
+#include "transform.h"
+
+#define DOUBLE_CLICK_TIME 0.3 /* in seconds */
 
 static void
 resize_window_callback(GLFWwindow* window, int width, int height)
@@ -15,6 +19,8 @@ resize_window_callback(GLFWwindow* window, int width, int height)
 	viewer->height = height;
 	viewer->resized = true;
 	viewer->camera.set_aspect((float)width / height);
+
+	glViewport(0, 0, width, height);
 }
 
 static void
@@ -65,7 +71,7 @@ bool Viewer3D::init(int width, int height, const char *title)
 	this->width = width;
 	this->height = height;
 	camera.set_aspect((float)width / height);
-	camera.set_fov(60.f);
+	camera.set_fov(90.f);
 	
 	glfwSetFramebufferSizeCallback(window, resize_window_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
@@ -86,6 +92,12 @@ void Viewer3D::process_keys()
 
 void Viewer3D::mouse_pressed(float px, float py, int button, int mods)
 {
+	static double last_pressed = -1.0;
+	double now = glfwGetTime();
+	bool double_click = (now - last_pressed) < DOUBLE_CLICK_TIME;
+	last_pressed = now;
+
+	
 	is_mouse_pressed = true;
 	this->button = button;
 	this->mods = mods;
@@ -93,7 +105,18 @@ void Viewer3D::mouse_pressed(float px, float py, int button, int mods)
 	last_click_y = py;
 	last_camera_pos = camera.get_position();
 	last_camera_rot = camera.get_rotation();
-	last_trackball_v = screen_trackball(px, py, width, height, width);
+	last_trackball_v = screen_trackball(px, py, width, height, width / 2.f);
+		
+	if (!double_click) return;
+
+	float pixels[8];
+	float tx = px;
+	float ty = height - py;
+	glReadPixels(tx, ty, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, pixels);
+	printf("Value at %d %d : %f\n", (int)px, (int)py, pixels[0]);
+	if (approx_equal(pixels[0], 1.f)) return;
+	target = camera.world_coord_at(px / width, py / height, pixels[0]);
+	printf("Target: %f %f %f\n", target[0], target[1], target[2]);
 }
 
 void Viewer3D::mouse_released(int button, int mods)
@@ -107,13 +130,35 @@ void Viewer3D::mouse_move(float px, float py)
 {
 	if (!is_mouse_pressed) return;
 
-	Vec3 trackball_v = screen_trackball(px, py, width, height, width);
-	Quat rot = great_circle_rotation(last_trackball_v, trackball_v);
-	camera.set_position(last_camera_pos);
-	camera.set_rotation(last_camera_rot);
-	camera.orbit(rot, target);
+	if (mods & GLFW_MOD_SHIFT)
+	{
+		Vec3 trans;
+		float dist = norm(target - camera.get_position());
+		float mult = dist / width;
+		trans.x = (last_click_x - px) * mult;
+		trans.y = (py - last_click_y) * mult;
+		trans.z = 0.f;
+		camera.set_position(last_camera_pos);
+		camera.translate(trans, Camera::View);
+	}
+	else
+	{
+		Vec3 trackball_v = screen_trackball(px, py, width, height, width / 2.f);
+		Quat rot = great_circle_rotation(last_trackball_v, trackball_v);
+		/* rot quat is in view frame, back to world frame */
+		rot.xyz = rotate(rot.xyz, last_camera_rot);
+		/* Reset camera to last saved */
+		camera.set_position(last_camera_pos);
+		camera.set_rotation(last_camera_rot);
+		/* Orbit */
+		camera.orbit(-rot, target);
+	}
 }
 
 void Viewer3D::mouse_scroll(float xoffset, float yoffset)
 {
+
+	Vec3 old_pos = camera.get_position();
+	Vec3 new_pos = target + pow(1.3f, yoffset) * (old_pos - target);
+	camera.set_position(new_pos);
 }

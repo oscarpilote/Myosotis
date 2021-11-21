@@ -16,33 +16,34 @@ struct TArray {
 	/**
 	 * Methods
 	 */
-	TArray();
+	TArray() = default;
 	TArray(size_t cap);
-	~TArray();
+	//~TArray();
 	T& operator[] (size_t i);
 	const T& operator[] (size_t i) const;
 	void push_back(const T &t);
 	void resize(size_t size);
+	void clear();
 };
 
-template< typename T>
-TArray<T>::TArray(): size{0}, capacity{0}, data{nullptr} {}
+//template< typename T>
+//TArray<T>::TArray(): size{0}, capacity{0}, data{nullptr} {}
 
 template <typename T>
-TArray<T>::TArray(size_t cap): size{0}
+TArray<T>::TArray(size_t cap)
 {
 	data = static_cast<T*>(malloc(cap * sizeof(T)));
 	capacity = cap;
 	size = cap;
 };
 
-template<typename T>
-inline TArray<T>::~TArray()
-{
-	size = 0;
-	capacity = 0;
-	free(data);
-}
+//template<typename T>
+//inline TArray<T>::~TArray()
+//{
+//	size = 0;
+//	capacity = 0;
+//	free(data);
+//}
 
 template<typename T>
 inline T& TArray<T>::operator[](size_t i)
@@ -83,4 +84,11 @@ void TArray<T>::resize(size_t size)
 	}
 }
 
+template<typename T>
+inline void TArray<T>::clear()
+{
+	size = 0;
+	capacity = 0;
+	free(data);
+}
 

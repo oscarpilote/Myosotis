@@ -69,7 +69,7 @@ template <typename T>
 TVec3<T> transform(const TMat4<T>& A, const TVec3<T>& v); 
 
 template <typename T>
-TVec4<T> transform(const TMat4<T>& A, const TVec4<T>& v); 
+TVec4<T> transform(const TMat4<T>&& A, const TVec4<T>&& v); 
 
 
 /* Implementations */

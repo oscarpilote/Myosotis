@@ -15,7 +15,7 @@ struct Viewer3D {
 
 	Vec3 target = Vec3::Zero;
 
-	bool  is_mouse_pressed;
+	bool  is_mouse_pressed = false;
 	int   button;
 	int   mods;
 	float last_click_x;

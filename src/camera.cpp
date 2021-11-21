@@ -104,7 +104,7 @@ Camera& Camera::translate(const Vec3& t, Space coord)
 {
 	if (coord == View) 
 	{
-		position += unrotate(t, rotation);
+		position += ::rotate(t, rotation);
 	}
 	else /* World */
 	{
@@ -115,14 +115,18 @@ Camera& Camera::translate(const Vec3& t, Space coord)
 
 Camera& Camera::rotate(const Quat& r)
 {
-	rotation = compose(rotation, r);
+	assert(!approx_equal(norm(r), 0.f));
+	Quat rot = r * (1.f / norm(r));
+	rotation = compose(rotation, rot);
 	return (*this);
 }
 
 Camera& Camera::orbit(const Quat& r, const Vec3& pivot)
 {
-	rotation = compose(rotation, r);
-	position = ::orbit(position, r, pivot);
+	assert(!approx_equal(norm(r), 0.f));
+	Quat rot = r * (1.f / norm(r));
+	rotation = compose(rotation, rot);
+	position = ::orbit(position, rot, pivot);
 	return (*this);
 }
 
@@ -160,12 +164,12 @@ Mat4 Camera::clip_to_view() const
 
 Mat4 Camera::world_to_view() const
 {
-	return compose(rotation, position).as_matrix();
+	return compose(-position, -rotation).as_matrix();
 }
 
 Mat4 Camera::view_to_world() const
 {
-	return compose(-position, -rotation).as_matrix();
+	return compose(rotation, position).as_matrix();
 }
 
 Mat4 Camera::world_to_clip() const

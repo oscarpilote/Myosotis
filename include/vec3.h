@@ -10,7 +10,13 @@ struct TVec3 {
 	T x;
 	T y;
 	T z;
-	
+
+	/* Constructors */
+	constexpr TVec3() = default;
+	constexpr TVec3(const TVec3& a);
+	constexpr TVec3(T x, T y, T z);
+	explicit  TVec3(const T* t);
+
 	/* Index Accessor */
 	T& operator[] (int n);
 	const T& operator[] (int n) const;
@@ -58,6 +64,15 @@ template <typename T>
 TVec3<T> normalized(const TVec3<T>& a);
 
 /* Functions implementations */
+
+template <typename T>
+inline constexpr TVec3<T>::TVec3(const TVec3<T>& a): x{a.x}, y{a.y}, z{a.z} {} 
+
+template <typename T>
+inline constexpr TVec3<T>::TVec3(T x, T y, T z): x{x}, y{y}, z{z} {} 
+
+template <typename T>
+inline TVec3<T>::TVec3(const T* t): x{t[0]}, y{t[1]}, z{t[2]} {}
 
 template <typename T>
 inline const T& TVec3<T>::operator[](int n) const

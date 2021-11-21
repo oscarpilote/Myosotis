@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "vec4.h"
 
@@ -16,6 +17,7 @@ struct TMat4 {
 	/* Column acessor and mutator */
 	const TVec4<T>& operator()(int i) const;
 	TVec4<T>& operator()(int i);
+
 };
 
 typedef TMat4<float> Mat4;
@@ -70,4 +72,13 @@ TMat4<T> operator* (const TMat4<T>& A, const TMat4<T>& B)
 	AB(3) = A(0) * B(0,3) + A(1) * B(1,3) + A(2) * B(2,3) + A(3) * B(3,3);
 
 	return (AB);
+}
+
+template <typename T>
+void print(const TMat4<T>& m)
+{
+	printf("%.3f %.3f %.3f %.3f\n", m(0,0), m(0,1), m(0,2), m(0,3));
+	printf("%.3f %.3f %.3f %.3f\n", m(1,0), m(1,1), m(1,2), m(1,3));
+	printf("%.3f %.3f %.3f %.3f\n", m(2,0), m(2,1), m(2,2), m(2,3));
+	printf("%.3f %.3f %.3f %.3f\n", m(3,0), m(3,1), m(3,2), m(3,3));
 }
