@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 	printf("Mesh positions : %f %f %f\n", m.positions[0][0], m.positions[6][1], m.positions[7][2]);
 	GLuint idx, pos, nml, tex, vao;
 	
-	glEnable(GL_DEBUG_OUTPUT);
+	//glEnable(GL_DEBUG_OUTPUT);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -85,8 +85,6 @@ int main(int argc, char **argv)
 	glGenBuffers(1, &pos);
 	glGenBuffers(1, &nml);
 	glGenBuffers(1, &tex);
-
-	//printf("Buffers: %d %d %d %d %d\n", vao, idx, pos, nml, tex);
 
 	glBindVertexArray(vao);
 	
@@ -115,7 +113,6 @@ int main(int argc, char **argv)
 	GLchar infoLog[512];
 
 	GLint vert = glCreateShader(GL_VERTEX_SHADER);
-	//printf("Program : %d\n", vert);
 	FILE *f = fopen("./shaders/default.vert", "rb");
 	if (!f) {
 		printf("No vertex shader!\n");
@@ -129,11 +126,9 @@ int main(int argc, char **argv)
 	fread(source[0], 1, fsize, f);
 	fclose(f);
 	source[0][fsize] = '\0';
-	//printf("%s\n", source[0]);
 	glShaderSource(vert, 1, (const char* const*) source, NULL);
 	glCompileShader(vert);
 	glGetShaderiv(vert, GL_COMPILE_STATUS, &success);
-	printf("Success : %d\n", success);
 	if (!success) 
 	{
     		glGetShaderInfoLog(vert, 512, NULL, infoLog);
@@ -142,7 +137,6 @@ int main(int argc, char **argv)
 	}
 
 	GLint frag = glCreateShader(GL_FRAGMENT_SHADER);
-	//printf("Program : %d\n", frag);
 	FILE *g = fopen("./shaders/default.frag", "rb");
 	if (!g) {
 		printf("No fragment shader!\n");
@@ -156,11 +150,9 @@ int main(int argc, char **argv)
 	fread(source2[0], 1, gsize, g);
 	fclose(g);
 	source2[0][gsize] = '\0';
-	//printf("%s\n", source2[0]);
 	glShaderSource(frag, 1, (const char* const*) source2, NULL);
 	glCompileShader(frag);
 	glGetShaderiv(frag, GL_COMPILE_STATUS, &success);
-	//printf("Success : %d\n", success);
 	if (!success) 
 	{
     		glGetShaderInfoLog(frag, 512, NULL, infoLog);
@@ -184,8 +176,8 @@ int main(int argc, char **argv)
 
 
 	
-	viewer.camera.set_position(Vec3(0, 0, 1));	
-	glfwSwapInterval(1);
+	viewer.camera.set_position(Vec3(0, 0, 1));
+	glfwSwapInterval(0);
 
 	while (!glfwWindowShouldClose(viewer.window)) {
 		
@@ -196,28 +188,16 @@ int main(int argc, char **argv)
 		glUseProgram(prg);
 		glBindVertexArray(vao);
 		
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		Mat4 proj = viewer.camera.view_to_clip();	
 		Mat4 vm = viewer.camera.world_to_view();
-		//printf("Projection : \n");
-		//print(proj);
-		//printf("View : \n");
-		//print(vm);
-		//Vec4 pos = Vec4(m.positions[0], 1.f);
-		//Vec4 view = transform(vm, pos);
-		//Vec4 clip = transform(proj, view);
-		//printf("Point : \n");
-		//printf("%f %f %f\n", pos[0], pos[1], pos[2]);
-		//printf("View : \n");
-		//printf("%f %f %f %f\n", view[0], view[1], view[2], view[3]);
-		//printf("Clip : \n");
-		//printf("%f %f %f\n", clip[0] / clip[3], clip[1] / clip[3], clip[2] / clip[3]);
+		Vec3 camera_pos = viewer.camera.get_position();
 
 		glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
 		glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
-		//printf("Indices : %d %d %d\n", m.indices[0], m.indices[1], m.indices[2]);
+		glUniform3fv(2, 1, &camera_pos[0]);
 		glDrawElements(GL_TRIANGLES, m.indices.size, GL_UNSIGNED_INT, 0);
 	
 		glfwSwapBuffers(viewer.window);

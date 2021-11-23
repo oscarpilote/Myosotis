@@ -1,0 +1,1 @@
+/usr/bin/c++ -g CMakeFiles/main.dir/main.cpp.o CMakeFiles/main.dir/viewer.cpp.o CMakeFiles/main.dir/camera.cpp.o CMakeFiles/main.dir/frustum.cpp.o CMakeFiles/main.dir/trackball.cpp.o CMakeFiles/main.dir/mesh_io.cpp.o CMakeFiles/main.dir/__/extern/indexgenerator.cpp.o -o main  -Wl,-rpath,/usr/local/lib -lOpenGL /usr/local/lib/libglfw.so.3.3 

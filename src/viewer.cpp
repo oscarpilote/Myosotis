@@ -8,7 +8,8 @@
 #include "trackball.h"
 #include "transform.h"
 
-#define DOUBLE_CLICK_TIME 0.3 /* in seconds */
+#define DOUBLE_CLICK_TIME 0.3   /* in seconds           */
+#define ZOOM_SENSITIVITY 0.3f   /* for mouse wheel zoom */
 
 static void
 resize_window_callback(GLFWwindow* window, int width, int height)
@@ -103,20 +104,23 @@ void Viewer3D::mouse_pressed(float px, float py, int button, int mods)
 	this->mods = mods;
 	last_click_x = px;
 	last_click_y = py;
-	last_camera_pos = camera.get_position();
-	last_camera_rot = camera.get_rotation();
+	last_camera_pos  = camera.get_position();
+	last_camera_rot  = camera.get_rotation();
 	last_trackball_v = screen_trackball(px, py, width, height, width / 2.f);
 		
 	if (!double_click) return;
 
-	float pixels[8];
+	float pixels[1];
 	float tx = px;
 	float ty = height - py;
 	glReadPixels(tx, ty, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, pixels);
-	printf("Value at %d %d : %f\n", (int)px, (int)py, pixels[0]);
-	if (approx_equal(pixels[0], 1.f)) return;
+	/* Don't track clicks outisde of model */
+	if (approx_equal(pixels[0], 1.f)) 
+	{
+		return;
+	}
+	
 	target = camera.world_coord_at(px / width, py / height, pixels[0]);
-	printf("Target: %f %f %f\n", target[0], target[1], target[2]);
 }
 
 void Viewer3D::mouse_released(int button, int mods)
@@ -129,28 +133,35 @@ void Viewer3D::mouse_released(int button, int mods)
 void Viewer3D::mouse_move(float px, float py)
 {
 	if (!is_mouse_pressed) return;
-
+	
 	if (mods & GLFW_MOD_SHIFT)
 	{
-		Vec3 trans;
+		/* Translation in x and y */	
 		float dist = norm(target - camera.get_position());
 		float mult = dist / width;
+		Vec3 trans;
 		trans.x = (last_click_x - px) * mult;
 		trans.y = (py - last_click_y) * mult;
 		trans.z = 0.f;
 		camera.set_position(last_camera_pos);
 		camera.translate(trans, Camera::View);
 	}
-	else
+	else if (mods & GLFW_MOD_CONTROL)
 	{
+		/* Zoom (translation in target direction) */
+		float mu = ZOOM_SENSITIVITY * (px - last_click_x) / 100;
+		Vec3 new_pos = target + exp(mu) * (last_camera_pos - target);
+		camera.set_position(new_pos);
+	}
+	else /* no modifier */
+	{
+		/* Orbit around target */
 		Vec3 trackball_v = screen_trackball(px, py, width, height, width / 2.f);
 		Quat rot = great_circle_rotation(last_trackball_v, trackball_v);
 		/* rot quat is in view frame, back to world frame */
 		rot.xyz = rotate(rot.xyz, last_camera_rot);
-		/* Reset camera to last saved */
 		camera.set_position(last_camera_pos);
 		camera.set_rotation(last_camera_rot);
-		/* Orbit */
 		camera.orbit(-rot, target);
 	}
 }
@@ -159,6 +170,6 @@ void Viewer3D::mouse_scroll(float xoffset, float yoffset)
 {
 
 	Vec3 old_pos = camera.get_position();
-	Vec3 new_pos = target + pow(1.3f, yoffset) * (old_pos - target);
+	Vec3 new_pos = target + exp(-ZOOM_SENSITIVITY * yoffset) * (old_pos - target);
 	camera.set_position(new_pos);
 }

@@ -17,8 +17,6 @@ Mesh obj_to_mesh(const char* filename)
 		return Mesh();
 	}
 	
-	printf("Loaded %s\n", filename);
-
 	size_t total_indices = 0;
 
 	for (unsigned int i = 0; i < obj->face_count; ++i)
@@ -26,8 +24,11 @@ Mesh obj_to_mesh(const char* filename)
 		total_indices += 3 * (obj->face_vertices[i] - 2);
 	}
 
-	printf("Total triangles %ld\n", total_indices / 3);
-
+	/*TArray<unsigned> indices(total_indices);
+	for (size_t idx = 0; idx < total_indices; idx++)
+	{
+		indices[idx] = idx;
+	}*/
 	TArray<Vec3> positions(total_indices);
 	TArray<Vec3> normals(total_indices);
 	TArray<Vec2> texcoords(total_indices);
@@ -41,6 +42,7 @@ Mesh obj_to_mesh(const char* filename)
 		{
 			if (j >= 3)
 			{
+				printf("Non triangular face here !\n");
 				positions[idx + 0] = positions[idx - 3];
 				positions[idx + 1] = positions[idx - 1];
 				normals[idx + 0]   = normals[idx - 3];
@@ -64,18 +66,18 @@ Mesh obj_to_mesh(const char* filename)
 
 	fast_obj_destroy(obj);
 
+	
 
 	meshopt_Stream streams[3] { 
-			{&positions[0], sizeof(float), 3 * sizeof(float)},
-			{&normals[0]  , sizeof(float), 3 * sizeof(float)},
-			{&texcoords[0], sizeof(float), 2 * sizeof(float)}};
+			{&positions[0], 3 * sizeof(float), 3 * sizeof(float)},
+			{&normals[0]  , 3 * sizeof(float), 3 * sizeof(float)},
+			{&texcoords[0], 2 * sizeof(float), 2 * sizeof(float)}};
 
 	TArray<unsigned int> remap(total_indices);
 	
 	size_t unique_vertex_count = meshopt_generateVertexRemapMulti(
 					&remap[0], NULL, total_indices, 
 					total_indices, streams, 3);
-	printf("Unique vertex count %ld\n", unique_vertex_count);
 
 	TArray<unsigned> indices(total_indices);
 	meshopt_remapIndexBuffer(&indices[0], NULL, total_indices, &remap[0]);
@@ -103,7 +105,9 @@ Mesh obj_to_mesh(const char* filename)
 	out.positions = new_pos;
 	out.normals = new_nml;
 	out.texcoords = new_tex;
+	/*out.positions = positions;
+	out.normals = normals;
+	out.texcoords = texcoords;*/
 
-	printf("Indices %d out indices %d\n", indices.size, out.indices.size);
 	return out;
 }
