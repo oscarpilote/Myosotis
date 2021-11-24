@@ -42,7 +42,6 @@ Mesh obj_to_mesh(const char* filename)
 		{
 			if (j >= 3)
 			{
-				printf("Non triangular face here !\n");
 				positions[idx + 0] = positions[idx - 3];
 				positions[idx + 1] = positions[idx - 1];
 				normals[idx + 0]   = normals[idx - 3];
