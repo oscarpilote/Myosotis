@@ -8,7 +8,7 @@
 #include "trackball.h"
 #include "transform.h"
 
-#define DOUBLE_CLICK_TIME 0.3   /* in seconds           */
+#define DOUBLE_CLICK_TIME 0.5   /* in seconds           */
 #define ZOOM_SENSITIVITY 0.3f   /* for mouse wheel zoom */
 
 static void

@@ -28,6 +28,10 @@ void main() {
 	if (smooth_shading)
 	{
 		N = normalize(_N);
+		if (dot(V, N) < 0)
+		{
+			N = -N;
+		}
 	}
 	else /* flat shading */
 	{

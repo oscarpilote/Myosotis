@@ -49,8 +49,8 @@ struct CameraFrustum {
 	float aspect_y = 1.f;
 	float shift_x  = 0.f;
 	float shift_y  = 0.f;
-	float near     = 0.01f;
-	float far      = 1000.f;
+	float near     = 0.001f;
+	float far      = 100.f;
 	bool  is_ortho = false;
 };
 
