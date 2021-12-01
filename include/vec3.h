@@ -21,6 +21,9 @@ struct TVec3 {
 	T& operator[] (int n);
 	const T& operator[] (int n) const;
 
+	/* Equality */
+	bool operator== (const TVec3& a) const;
+
 	/* Vector space structure */
 	TVec3 operator- () const;
 	TVec3& operator+= (const TVec3& a);
@@ -86,6 +89,12 @@ inline T& TVec3<T>::operator[](int n)
 {
 	assert(n >= 0 && n <= 2);
 	return (&x)[n];
+}
+	
+template <typename T>
+inline bool TVec3<T>::operator== (const TVec3<T>& a) const
+{
+	return (x == a.x && y == a.y && z == a.z);
 }
 
 template <typename T>
@@ -178,6 +187,5 @@ template <typename T>
 TVec3<T> normalized(const TVec3<T>& a)
 {
 	T len = norm(a);
-	assert(len != 0);
-	return a * (1.f / len);
+	return (len == 0) ? a : a * (1.f / len);
 }

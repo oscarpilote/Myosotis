@@ -11,10 +11,11 @@ struct Viewer3D {
 	int height;
 	bool resized;
 
+	/* Camera */
 	Camera camera;
 
+	/* Camera manipulation */
 	Vec3 target = Vec3::Zero;
-
 	bool  is_mouse_pressed = false;
 	int   button;
 	int   mods;
@@ -24,10 +25,14 @@ struct Viewer3D {
 	Quat  last_camera_rot;
 	Vec3  last_trackball_v;
 
+	/* Shading */
+	bool smooth_shading = true;
+
 	bool init(int width, int height, const char *title);
 	void process_keys();
 	void mouse_pressed(float px, float py, int button, int mods);
 	void mouse_released(int button, int mods);
 	void mouse_move(float px, float py);
 	void mouse_scroll(float xoffset, float yoffset);
+	void key_pressed(int key, int action);
 };

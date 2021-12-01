@@ -30,6 +30,10 @@ struct alignas(4 * sizeof(T)) TVec4 {
 	T& operator[] (int n);
 	const T& operator[] (int n) const;
 
+	/* Equality */
+	bool operator== (const TVec4<T>& a) const;
+
+
 	/* Vector space structure */
 	TVec4& operator-  () const;
 	TVec4& operator+= (const TVec4& a);
@@ -94,6 +98,12 @@ inline T& TVec4<T>::operator[](int n)
 {
 	assert(n >= 0 && n <= 3);
 	return (&x)[n];
+}
+
+template <typename T>
+inline bool TVec4<T>::operator== (const TVec4<T>& a) const
+{
+	return (x == a.x && y == a.y && z == a.z && w == a.w);
 }
 
 template <typename T>

@@ -19,6 +19,9 @@ struct TVec2 {
 	/* Index Accessor */
 	T& operator[] (int n);
 	const T& operator[] (int n) const;
+	
+	/* Equality */
+	bool operator== (const TVec2<T>& a) const;
 
 	/* Vector space structure */
 	TVec2 operator- () const;
@@ -84,6 +87,12 @@ inline T& TVec2<T>::operator[](int n)
 {
 	assert(n >= 0 && n <= 1);
 	return (&x)[n];
+}
+
+template <typename T>
+inline bool TVec2<T>::operator== (const TVec2<T>& a) const
+{
+	return (x == a.x && y == a.y);
 }
 
 template <typename T>

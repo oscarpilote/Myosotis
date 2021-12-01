@@ -16,9 +16,9 @@ struct TArray {
 	/**
 	 * Methods
 	 */
-	TArray() = default;
+	TArray();
 	TArray(size_t cap);
-	//~TArray();
+	~TArray();
 	T& operator[] (size_t i);
 	const T& operator[] (size_t i) const;
 	void push_back(const T &t);
@@ -26,8 +26,8 @@ struct TArray {
 	void clear();
 };
 
-//template< typename T>
-//TArray<T>::TArray(): size{0}, capacity{0}, data{nullptr} {}
+template< typename T>
+TArray<T>::TArray(): size{0}, capacity{0}, data{nullptr} {}
 
 template <typename T>
 TArray<T>::TArray(size_t cap)
@@ -37,13 +37,13 @@ TArray<T>::TArray(size_t cap)
 	size = cap;
 };
 
-//template<typename T>
-//inline TArray<T>::~TArray()
-//{
-//	size = 0;
-//	capacity = 0;
-//	free(data);
-//}
+template<typename T>
+inline TArray<T>::~TArray()
+{
+	size = 0;
+	capacity = 0;
+	free(data);
+}
 
 template<typename T>
 inline T& TArray<T>::operator[](size_t i)
@@ -77,9 +77,7 @@ void TArray<T>::resize(size_t size)
 	
 	if (size > capacity)
 	{
-		data = (data != nullptr) ? 
-			static_cast<T*>(realloc(data, size * sizeof(T))) :
-			static_cast<T*>(malloc(size * sizeof(T)));
+		data = static_cast<T*>(realloc(data, size * sizeof(T)));
 		capacity = size;
 	}
 }
@@ -88,7 +86,7 @@ template<typename T>
 inline void TArray<T>::clear()
 {
 	size = 0;
-	capacity = 0;
-	free(data);
+	/*capacity = 0;
+	free(data);*/
 }
 

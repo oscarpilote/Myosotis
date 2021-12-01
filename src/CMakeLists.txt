@@ -9,7 +9,12 @@ add_executable(main
 	frustum.cpp
 	trackball.cpp
 	mesh_io.cpp
-	../extern/indexgenerator.cpp
+	mesh_grid.cpp
+	mesh_utils.cpp
+	mesh_remap.cpp
+	mesh.cpp
+	chrono.cpp
+	../extern/miniply/miniply.cpp
 	)
 
 target_compile_features(main PUBLIC cxx_std_20)

@@ -1,17 +1,20 @@
 #pragma once
 
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 #include <assert.h>
 #include <stdlib.h>
-
 #include "sys_utils.h"
 
 /* a trivial hasher (meant for arithmetic types) */
 template <typename K>
-class DefaultHasher {
+struct DefaultHasher {
+	static constexpr K empty_key = ~static_cast<K>(0);
 	size_t   hash(K key) const {return static_cast<size_t>(key);}
-	bool is_empty(K key) const {return (key == ~static_cast<K>(0));}
+	bool is_empty(K key) const {return (key == empty_key);}
 	bool is_equal(K key1, K key2) const {return (key1 == key2);}
-	K empty() const {return (~static_cast<K>(0));}
 };
 
 /* Uses OA and does _not_ implement deletion *
@@ -19,17 +22,24 @@ class DefaultHasher {
  * is_equal and empty.                       */
 template <typename K, typename V, class H = DefaultHasher<K>>
 struct HashTable {
-	HashTable(size_t expected_nkeys = 0);
+public:
+	/* Methods */
+	HashTable(size_t expected_nkeys, H hasher = H());
 	~HashTable();
+	size_t size() const;
+	void clear();
 	V* get(K key) const;
+	V* get_or_set(K key, V alt_val);
 	void set_at(K key, V val);
 	float load_factor() const;
 private:
-	size_t size;
-	size_t buckets;
+	/* Members */
+	size_t _size;
+	size_t _buckets;
 	K *keys;
 	V *vals;
 	H hasher;
+	/* Methods */
 	void grow();
 	bool load_factor_ok() const;
 };
@@ -59,7 +69,7 @@ static inline size_t hash_lookup(K *keys, size_t buckets, H hasher, K key)
 	return 0;
 }
 
-static inline size_t hashtable_buckets(size_t n)
+static size_t hashtable_buckets(size_t n)
 {
 	size_t ret = 1;
 	while (ret < n) ret *= 2;
@@ -67,55 +77,91 @@ static inline size_t hashtable_buckets(size_t n)
 }
 
 template<typename K, typename V, typename H>
-HashTable<K, V, H>::HashTable(size_t expected_keys)
+HashTable<K, V, H>::HashTable(size_t expected_keys, H hasher)
 {
-	size = 0;
-	buckets = hashtable_buckets(expected_keys);
+	_size = 0;
+	
+	_buckets = 1;
+	while (_buckets < (3 * expected_keys / 2))
+	{
+		_buckets *= 2;
+	}
+	
+	this->hasher = hasher;
 
-	keys = static_cast<K*>(malloc(buckets * sizeof(K)));
-	vals = static_cast<V*>(malloc(buckets * sizeof(V)));
+	keys = static_cast<K*>(malloc(_buckets * sizeof(K)));
+	vals = static_cast<V*>(malloc(_buckets * sizeof(V)));
 	assert(keys != nullptr && vals != nullptr);
 
-	/* Initialize slots to empty keys */
-	for (size_t i = 0; i < buckets; ++i)
-	{
-		keys[i] = hasher.empty();
-		assert(hasher.is_empty(keys[i]));
-	}
+	clear();
 }
 
 template<typename K, typename V, typename H>
 HashTable<K, V, H>::~HashTable()
 {
-	buckets = 0;
-	size = 0;
+	_buckets = 0;
+	_size = 0;
 
 	free(keys);
 	free(vals);
 }
 
 template<typename K, typename V, typename H>
-bool HashTable<K, V, H>::load_factor_ok() const
+inline size_t HashTable<K, V, H>::size() const
 {
-	/* 66% load factor limit */
-	return (buckets > size + size / 2);
+	return (_size);
 }
+
+template<typename K, typename V, typename H>
+void HashTable<K, V, H>::clear()
+{
+	for (size_t i = 0; i < _buckets; ++i)
+	{
+		keys[i] = hasher.empty_key;
+		assert(hasher.is_empty(keys[i]));
+	}
+	_size = 0;
+}
+
+
 
 template<typename K, typename V, typename H>
 inline V* HashTable<K, V, H>::get(K key) const
 {
-	size_t bucket = hash_lookup(keys, buckets, hasher, key);
+	size_t bucket = hash_lookup(keys, _buckets, hasher, key);
 	return hasher.is_empty(keys[bucket]) ? nullptr : &vals[bucket];
+}
+
+template<typename K, typename V, typename H>
+inline V* HashTable<K, V, H>::get_or_set(K key, V alt_val)
+{
+	size_t bucket = hash_lookup(keys, _buckets, hasher, key);
+	if (hasher.is_empty(keys[bucket]))
+	{
+		keys[bucket] = key;
+		vals[bucket] = alt_val; 
+		_size++;
+		if UNLIKELY(!load_factor_ok()) {
+			grow();
+			assert(load_factor_ok());
+		}
+
+		return nullptr;
+	}
+	else
+	{
+		return &vals[bucket];
+	}
 }
 
 template<typename K, typename V, typename H>
 inline void HashTable<K, V, H>::set_at(K key, V val)
 {
-	size_t bucket = hash_lookup(keys, buckets, hasher, key);
+	size_t bucket = hash_lookup(keys, _buckets, hasher, key);
 	vals[bucket] = val;
 	if (hasher.is_empty(keys[bucket])) {
 		keys[bucket] = key;
-		size++;
+		_size++;
 		if UNLIKELY(!load_factor_ok()) {
 			grow();
 			assert(load_factor_ok());
@@ -126,26 +172,30 @@ inline void HashTable<K, V, H>::set_at(K key, V val)
 template<typename K, typename V, typename H>
 float HashTable<K, V, H>::load_factor() const
 {
-	return static_cast<float>(size) / buckets;
+	return static_cast<float>(_size) / _buckets;
 }
 
 template <typename K, typename V, typename H>
 void HashTable<K, V, H>::grow()
 {
-	size_t new_buckets = 2 * buckets;
+#ifdef DEBUG
+	printf("HashTable Grow to %zu!\n", 2 * _buckets);
+#endif
+
+	size_t new_buckets = 2 * _buckets;
 
 	assert((new_buckets & (new_buckets - 1)) == 0);
-	assert(new_buckets > size);
+	assert(new_buckets > _size);
 
 
 	K *newk = (K *)malloc(new_buckets * sizeof(*newk));
 	V *newv = (V *)malloc(new_buckets * sizeof(*newv));
 	
 	for (size_t i = 0; i < new_buckets; ++i) {
-		newk[i] = hasher.empty();
+		newk[i] = hasher.empty_key;
 	}
 	
-	for (size_t probe = 0; probe < buckets; ++probe) {
+	for (size_t probe = 0; probe < _buckets; ++probe) {
 		
 		const K key = keys[probe];
 		
@@ -162,5 +212,13 @@ void HashTable<K, V, H>::grow()
 	free(vals);
 	keys = newk;
 	vals = newv;
-	buckets = new_buckets;
+	_buckets = new_buckets;
 }
+
+template<typename K, typename V, typename H>
+inline bool HashTable<K, V, H>::load_factor_ok() const
+{
+	/* 66% load factor limit */
+	return (_buckets > _size + _size / 2);
+}
+

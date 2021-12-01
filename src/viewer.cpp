@@ -56,6 +56,12 @@ scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	viewer->mouse_scroll(xoffset, yoffset);
 }
 
+static void
+key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	Viewer3D* viewer = (Viewer3D *)glfwGetWindowUserPointer(window);
+	viewer->key_pressed(key, action);
+}
 
 
 bool Viewer3D::init(int width, int height, const char *title)
@@ -73,22 +79,13 @@ bool Viewer3D::init(int width, int height, const char *title)
 	this->height = height;
 	camera.set_aspect((float)width / height);
 	camera.set_fov(90.f);
-	
+	glfwSetKeyCallback(window, key_callback);	
 	glfwSetFramebufferSizeCallback(window, resize_window_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 
 	return (true);
-}
-
-void Viewer3D::process_keys()
-{
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-	{
-		glfwSetWindowShouldClose(window, 1);
-	}
-	/* Further key controls go here */
 }
 
 void Viewer3D::mouse_pressed(float px, float py, int button, int mods)
@@ -106,7 +103,7 @@ void Viewer3D::mouse_pressed(float px, float py, int button, int mods)
 	last_click_y = py;
 	last_camera_pos  = camera.get_position();
 	last_camera_rot  = camera.get_rotation();
-	last_trackball_v = screen_trackball(px, py, width, height, width / 2.f);
+	last_trackball_v = screen_trackball(px, py, width, height, width);
 		
 	if (!double_click) return;
 
@@ -156,7 +153,7 @@ void Viewer3D::mouse_move(float px, float py)
 	else /* no modifier */
 	{
 		/* Orbit around target */
-		Vec3 trackball_v = screen_trackball(px, py, width, height, width / 2.f);
+		Vec3 trackball_v = screen_trackball(px, py, width, height, width);
 		Quat rot = great_circle_rotation(last_trackball_v, trackball_v);
 		/* rot quat is in view frame, back to world frame */
 		rot.xyz = rotate(rot.xyz, last_camera_rot);
@@ -172,4 +169,17 @@ void Viewer3D::mouse_scroll(float xoffset, float yoffset)
 	Vec3 old_pos = camera.get_position();
 	Vec3 new_pos = target + exp(-ZOOM_SENSITIVITY * yoffset) * (old_pos - target);
 	camera.set_position(new_pos);
+}
+
+void Viewer3D::key_pressed(int key, int action)
+{
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, 1);
+	}
+	/* Further key controls go here */
+	else if (key == GLFW_KEY_S && action == GLFW_PRESS)
+	{
+		smooth_shading = !smooth_shading;
+	}
 }

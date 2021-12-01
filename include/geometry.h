@@ -61,6 +61,9 @@ TVec4<T> ray_plane_intersection(const TRay<T>& ray, const TPlane<T>& plane);
 template <typename T>
 TQuat<T> great_circle_rotation(const TVec3<T>& from, const TVec3<T>& to);
 
+template <typename T>
+TVec3<T> normal(const TVec3<T>& v1, const TVec3<T>& v2, const TVec3<T>& v3);
+
 /* Implementations */
 
 template <typename T>
@@ -98,5 +101,11 @@ TQuat<T> great_circle_rotation(const TVec3<T>& from, const TVec3<T>& to)
 	TVec3<T> xyz = cross(from, to) * (0.5f / cos_half_angle);
 	
 	return {xyz, w};
+}
+
+template <typename T>
+TVec3<T> normal(const TVec3<T>& v1, const TVec3<T>& v2, const TVec3<T>& v3)
+{
+	return normalized(cross(v2 - v1, v3 - v1));
 }
 

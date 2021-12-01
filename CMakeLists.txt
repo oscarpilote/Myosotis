@@ -20,7 +20,7 @@ find_package(OpenGL REQUIRED)
 add_compile_definitions(NDC_REVERSED_Z=0)
 add_compile_definitions(NDC_REVERSED_Y=0)
 add_compile_definitions(NDC_Z_ZERO_ONE=0)
-add_compile_definitions(FAST_OBJ_IMPLEMENTATION)
+add_compile_definitions(DEBUG)
  
 find_package(glfw3 REQUIRED)
 
