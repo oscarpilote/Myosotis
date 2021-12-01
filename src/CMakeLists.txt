@@ -17,6 +17,6 @@ add_executable(main
 	../extern/miniply/miniply.cpp
 	)
 
-target_compile_features(main PUBLIC cxx_std_20)
+target_compile_features(main PUBLIC cxx_std_17)
 target_link_libraries(main OpenGL glfw)
 

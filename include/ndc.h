@@ -55,7 +55,7 @@ constexpr bool z_zero_one = NDC_Z_ZERO_ONE ? true : false;
 
 constexpr Vec3 nwd_to_ndc(float x, float y, float depth)
 {
-	Vec3 ndc;
+	Vec3 ndc {0, 0, 0};
 
 	ndc.x = 2.f * x - 1.f;
 	if constexpr( reversed_y) ndc.y = 2.f * y - 1.f;

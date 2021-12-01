@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 
 // In variables
 layout (location = 0) in vec3 _N;  /* Normal vector */
