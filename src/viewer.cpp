@@ -7,7 +7,7 @@
 #include "camera.h"
 #include "trackball.h"
 #include "transform.h"
-#include "gui.h"
+#include "myosotis.h"
 
 #define DOUBLE_CLICK_TIME 0.5   /* in seconds           */
 #define ZOOM_SENSITIVITY 0.3f   /* for mouse wheel zoom */
