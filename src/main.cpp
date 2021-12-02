@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
 #ifndef GL_GLEXT_PROTOTYPES
 #define GL_GLEXT_PROTOTYPES 1
 #endif
@@ -16,37 +20,7 @@
 #include "mesh_grid.h"
 #include "mesh_utils.h"
 #include "chrono.h"
-
-bool init_window_system()
-{
-	
-	bool ret = glfwInit();
-
-
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-	glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_SAMPLES, 4);
-	
-	return ret;
-}
-
-void close_window_system()
-{
-	glfwTerminate();
-}
-
-static void MessageCallback(GLenum source, GLenum type, GLuint id,
-		GLenum severity, GLsizei length, const GLchar* message,
-		const void* userParam)
-{
-	if (type == GL_DEBUG_TYPE_ERROR) {
-		printf("GL CALLBACK: %s type = 0x%x, severity = 0x%x,\
-			message = %s\n", type == GL_DEBUG_TYPE_ERROR ? 
-			"** GL ERROR **" : "", type, severity, message);
-	}
-}
+#include "myosotis.h"
 
 void syntax(char *argv[])
 {
@@ -128,41 +102,31 @@ int main(int argc, char **argv)
 		timer_stop("split_mesh_with_grid");
 	}
 	
-	/* Init Window system */	
-	if (!init_window_system())
-	{
-		printf("Could not init windowing system.\n");
-		return (EXIT_FAILURE);
-	}
-	
 	/* Main window and context */
-	Viewer3D viewer;
+	Myosotis app;
 	
-	if ( !viewer.init(1024, 768, "3D Viewer") )
+	if (!app.init(1024, 768))
 	{
-		printf("Failed to init viewer.\n");
-		close_window_system();
 		return (EXIT_FAILURE);
 	}
-	
+
 	/* Init camera position */	
-	viewer.target = model_center;
-	viewer.camera.set_position(model_center + Vec3(0, 0, model_size));
-	viewer.camera.set_near(0.001 * model_size);
-	viewer.camera.set_far(100 * model_size);
+	app.viewer.target = model_center;
+	app.viewer.camera.set_position(model_center + Vec3(0, 0, model_size));
+	app.viewer.camera.set_near(0.001 * model_size);
+	app.viewer.camera.set_far(100 * model_size);
 
 
 	/* Upload mesh */	
 	GLuint idx, pos, nml, tex, vao;
 	
-	glEnable(GL_DEBUG_OUTPUT);
-	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEBUG_OUTPUT);
+	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glDebugMessageCallback(MessageCallback, 0);
 	
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &idx);
@@ -199,7 +163,7 @@ int main(int argc, char **argv)
 				GL_STATIC_DRAW);
 	}
 
-	if (data.vtx_attribs & VertexAttrib::NML)
+	if (data.vtx_attribs & VertexAttrib::UV0)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, tex);
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,
@@ -284,36 +248,38 @@ int main(int argc, char **argv)
 	glDeleteShader(frag);
 
 
-	glfwSwapInterval(1);
 
 	/* Main loop */
-	while (!glfwWindowShouldClose(viewer.window)) {
+	while (!app.should_close()) {
 		
-		glfwPollEvents();
+		app.new_frame();
 
 		glUseProgram(prg);
 		glBindVertexArray(vao);
 		
-		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+		glClearColor(app.cfg.clear_color.x, app.cfg.clear_color.y, 
+			     app.cfg.clear_color.z, app.cfg.clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		Mat4 proj = viewer.camera.view_to_clip();	
-		Mat4 vm = viewer.camera.world_to_view();
-		Vec3 camera_pos = viewer.camera.get_position();
+		Mat4 proj = app.viewer.camera.view_to_clip();	
+		Mat4 vm = app.viewer.camera.world_to_view();
+		Vec3 camera_pos = app.viewer.camera.get_position();
 
 		glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
 		glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
 		glUniform3fv(2, 1, &camera_pos[0]);
-		glUniform1i(3, viewer.smooth_shading);
+		glUniform1i(3, app.cfg.smooth_shading);
 		glDrawElements(GL_TRIANGLES, mesh.index_count, GL_UNSIGNED_INT,
 				0);
-	
-		glfwSwapBuffers(viewer.window);
+		
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		
+		glfwSwapBuffers(app.window);
 	
 	}
 
 	/* Cleaning */
-	close_window_system();
+	app.clean();
 	
 	return (EXIT_SUCCESS);
 }

@@ -6,7 +6,6 @@
 
 struct Viewer3D {
 	
-	GLFWwindow* window;
 	int width;
 	int height;
 	bool resized;
@@ -15,7 +14,7 @@ struct Viewer3D {
 	Camera camera;
 
 	/* Camera manipulation */
-	Vec3 target = Vec3::Zero;
+	Vec3  target = Vec3::Zero;
 	bool  is_mouse_pressed = false;
 	int   button;
 	int   mods;
@@ -28,7 +27,7 @@ struct Viewer3D {
 	/* Shading */
 	bool smooth_shading = true;
 
-	bool init(int width, int height, const char *title);
+	bool init(int width, int height);
 	void process_keys();
 	void mouse_pressed(float px, float py, int button, int mods);
 	void mouse_released(int button, int mods);

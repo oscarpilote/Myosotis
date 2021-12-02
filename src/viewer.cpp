@@ -7,83 +7,20 @@
 #include "camera.h"
 #include "trackball.h"
 #include "transform.h"
+#include "gui.h"
 
 #define DOUBLE_CLICK_TIME 0.5   /* in seconds           */
 #define ZOOM_SENSITIVITY 0.3f   /* for mouse wheel zoom */
 
-static void
-resize_window_callback(GLFWwindow* window, int width, int height)
-{
-	Viewer3D* viewer = (Viewer3D *)glfwGetWindowUserPointer(window);
-	
-	viewer->width = width;
-	viewer->height = height;
-	viewer->resized = true;
-	viewer->camera.set_aspect((float)width / height);
-
-	glViewport(0, 0, width, height);
-}
-
-static void
-mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-	Viewer3D* viewer = (Viewer3D *)glfwGetWindowUserPointer(window);
-	if (action == GLFW_PRESS)
-	{
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-		viewer->mouse_pressed(xpos, ypos, button, mods);
-	} 
-	else if (action == GLFW_RELEASE)
-	{
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-		viewer->mouse_released(button, mods);
-	}
-}
-
-static void
-cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
-{
-	Viewer3D* viewer = (Viewer3D *)glfwGetWindowUserPointer(window);
-	viewer->mouse_move(xpos, ypos);
-}
-
-static void
-scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-	Viewer3D* viewer = (Viewer3D *)glfwGetWindowUserPointer(window);
-	viewer->mouse_scroll(xoffset, yoffset);
-}
-
-static void
-key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	Viewer3D* viewer = (Viewer3D *)glfwGetWindowUserPointer(window);
-	viewer->key_pressed(key, action);
-}
 
 
-bool Viewer3D::init(int width, int height, const char *title)
+bool Viewer3D::init(int width, int height)
 {
 
-	window = glfwCreateWindow(width, height, title, NULL, NULL);
-	if (!window) 
-	{
-		return (false);
-	}
-	glfwSetWindowUserPointer(window, this);
-	glfwMakeContextCurrent(window);
-	
 	this->width = width;
 	this->height = height;
 	camera.set_aspect((float)width / height);
 	camera.set_fov(90.f);
-	glfwSetKeyCallback(window, key_callback);	
-	glfwSetFramebufferSizeCallback(window, resize_window_callback);
-	glfwSetCursorPosCallback(window, cursor_position_callback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
-	glfwSetScrollCallback(window, scroll_callback);
 
 	return (true);
 }
@@ -173,12 +110,7 @@ void Viewer3D::mouse_scroll(float xoffset, float yoffset)
 
 void Viewer3D::key_pressed(int key, int action)
 {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-	{
-		glfwSetWindowShouldClose(window, 1);
-	}
-	/* Further key controls go here */
-	else if (key == GLFW_KEY_S && action == GLFW_PRESS)
+	if (key == GLFW_KEY_S && action == GLFW_PRESS)
 	{
 		smooth_shading = !smooth_shading;
 	}

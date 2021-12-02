@@ -14,9 +14,16 @@ add_executable(main
 	mesh_remap.cpp
 	mesh.cpp
 	chrono.cpp
+	myosotis.cpp
 	../extern/miniply/miniply.cpp
+	../extern/imgui/imgui.cpp
+	../extern/imgui/imgui_draw.cpp
+	../extern/imgui/imgui_tables.cpp
+	../extern/imgui/imgui_widgets.cpp
+	../extern/imgui/imgui_impl_glfw.cpp
+	../extern/imgui/imgui_impl_opengl3.cpp
 	)
 
-target_compile_features(main PUBLIC cxx_std_17)
-target_link_libraries(main OpenGL glfw)
+target_compile_features(main PUBLIC cxx_std_20)
+target_link_libraries(main OpenGL glfw ${CMAKE_DL_LIBS})
 
