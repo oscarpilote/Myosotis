@@ -9,17 +9,19 @@
  * Implemented using (the inverse of) a stereographic projection from a sphere 
  * of given radius and tangent to the screen plane at the screen center.
  *
+ * NOTE: Screens coordinates at scaled so that the screen appears square
+ *       and the sphere is tangent to the four screen sides.
+ *
  * @param px - pixel x coord of click point (left is at 0).
  * @param py - pixel y coord of click point (top is at 0).
  * @param width - window width.
  * @param height - window height.
- * @param radius - radius of the sphere (in pixels).
  *
  * Return : a unit 3D vector in a frame oriented like view coordinates (so for
  *          a click on the screen center the return vector is always (0, 0, 1).                 
  */
 Vec3 
-screen_trackball(float px, float py, float width, float height, float radius);
+screen_trackball(float px, float py, float width, float height);
 
 /* Transform a normalised screen coordinate into a point on the unit sphere, 
  * modeling user click onto a trackball attached to a given world position.

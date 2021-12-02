@@ -39,7 +39,14 @@ bool Myosotis::init(int width, int height)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	
-	window = glfwCreateWindow(width, height, "Myosotis", NULL, NULL);
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+ 	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+ 
+	window = glfwCreateWindow(mode->width, mode->height, "Myosotis", 
+					glfwGetPrimaryMonitor(), NULL);
 	if (!window) 
 	{
 		return (false);
@@ -54,7 +61,7 @@ bool Myosotis::init(int width, int height)
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-	glfwSwapInterval(cfg.vsync);
+	glfwSwapInterval(1);
 
 	/* Set-up ImGUI */
 	IMGUI_CHECKVERSION();
@@ -119,7 +126,6 @@ resize_window_callback(GLFWwindow* window, int width, int height)
 	
 	app->viewer.width = width;
 	app->viewer.height = height;
-	app->viewer.resized = true;
 	app->viewer.camera.set_aspect((float)width / height);
 
 	glViewport(0, 0, width, height);
@@ -182,12 +188,31 @@ key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 	
 	if (app->io->WantCaptureKeyboard)
 	{
-		//return;
+		return;
 	}
 	
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(app->window, 1);
+		return;
+	}
+	
+	if (key == GLFW_KEY_S && action == GLFW_PRESS)
+	{
+		app->cfg.smooth_shading ^= true;
+		return;
+	}
+	
+	if (key == GLFW_KEY_O && action == GLFW_PRESS)
+	{
+		app->viewer.nav_mode = NavMode::Orbit;
+		return;
+	}
+	
+	if (key == GLFW_KEY_F && action == GLFW_PRESS)
+	{
+		app->viewer.nav_mode = NavMode::Free;
+		return;
 	}
 
 	app->viewer.key_pressed(key, action);

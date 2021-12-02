@@ -99,7 +99,7 @@ TQuat<T> great_circle_rotation(const TVec3<T>& from, const TVec3<T>& to)
 	
 	T w = cos_half_angle;
 	TVec3<T> xyz = cross(from, to) * (0.5f / cos_half_angle);
-	
+
 	return {xyz, w};
 }
 

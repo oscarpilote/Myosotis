@@ -41,7 +41,7 @@ public:
 	 * @param fov - Field of view in degrees.
 	 * @param axis - Axis along which fov is understood.
 	 */
-	Camera(float aspect_ratio, float fov, Fov axis = Horizontal);
+	Camera(float aspect_ratio, float fov, Fov axis = Vertical);
 
 	/**
 	 * Change camera aspect ratio and adapt either horizontal or vertical
@@ -50,7 +50,7 @@ public:
 	 * @param aspect_ratio - New aspect_ratio.
 	 * @param cst_axis - Axis whose fov shall be kept constant.
 	 */
-	Camera& set_aspect(float aspect_ratio, Fov cst_axis = Horizontal);
+	Camera& set_aspect(float aspect_ratio, Fov cst_axis = Vertical);
 
 	/**
 	 * Change camera fov.
@@ -58,7 +58,7 @@ public:
 	 * @param fov - New fov.
 	 * @param axis - Axis along which fov is understood.
 	 */
-	Camera& set_fov(float fov, Fov axis = Horizontal);
+	Camera& set_fov(float fov, Fov axis = Vertical);
 
 	/**
 	 * Change lense shift for non centered lenses.

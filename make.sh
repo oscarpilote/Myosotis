@@ -9,7 +9,7 @@ make --no-print-directory -C build/release
 
 mkdir -p bin
 echo
-echo "Copying executables to bin idrectory."
+echo "Copying executables to bin directory."
 echo "-------------------------------------"
 echo "-> bin/myosotis_debug"
 cp build/debug/src/main bin/myosotis_debug

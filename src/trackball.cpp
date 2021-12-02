@@ -4,11 +4,10 @@
 #include "geometry.h"
 #include "camera.h"
 
-Vec3 screen_trackball(float px, float py, float width, float height, 
-			float radius)
+Vec3 screen_trackball(float px, float py, float width, float height)
 {
-	float x = (px - 0.5f * width) / radius;
-	float y = (0.5f * height - py) / radius;
+	float x = (2 * px - width) / width;
+	float y = (height - 2 * py) / height;
 	float a = 2.f / (1.f + x * x + y * y);
 
 	Vec3 v {a * x, a * y, -1.f + a};

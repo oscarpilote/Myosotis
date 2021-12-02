@@ -4,11 +4,25 @@
 
 #include "camera.h"
 
+namespace NavMode {
+	enum {
+		Orbit,
+		Free,
+		Walk,
+		Fly
+	};
+};
+
+
+
 struct Viewer3D {
 	
+	/* TODO viewport instead */
 	int width;
 	int height;
-	bool resized;
+
+	/* Mode */
+	uint32_t nav_mode = NavMode::Orbit;
 
 	/* Camera */
 	Camera camera;
@@ -24,11 +38,7 @@ struct Viewer3D {
 	Quat  last_camera_rot;
 	Vec3  last_trackball_v;
 
-	/* Shading */
-	bool smooth_shading = true;
-
 	bool init(int width, int height);
-	void process_keys();
 	void mouse_pressed(float px, float py, int button, int mods);
 	void mouse_released(int button, int mods);
 	void mouse_move(float px, float py);

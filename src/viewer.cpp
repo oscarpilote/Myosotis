@@ -12,13 +12,12 @@
 #define DOUBLE_CLICK_TIME 0.5   /* in seconds           */
 #define ZOOM_SENSITIVITY 0.3f   /* for mouse wheel zoom */
 
-
-
 bool Viewer3D::init(int width, int height)
 {
 
 	this->width = width;
 	this->height = height;
+	
 	camera.set_aspect((float)width / height);
 	camera.set_fov(90.f);
 
@@ -40,7 +39,7 @@ void Viewer3D::mouse_pressed(float px, float py, int button, int mods)
 	last_click_y = py;
 	last_camera_pos  = camera.get_position();
 	last_camera_rot  = camera.get_rotation();
-	last_trackball_v = screen_trackball(px, py, width, height, width);
+	last_trackball_v = screen_trackball(px, py, width, height);
 		
 	if (!double_click) return;
 
@@ -89,14 +88,26 @@ void Viewer3D::mouse_move(float px, float py)
 	}
 	else /* no modifier */
 	{
-		/* Orbit around target */
-		Vec3 trackball_v = screen_trackball(px, py, width, height, width);
+		Vec3 trackball_v = screen_trackball(px, py, width, height);
 		Quat rot = great_circle_rotation(last_trackball_v, trackball_v);
 		/* rot quat is in view frame, back to world frame */
 		rot.xyz = rotate(rot.xyz, last_camera_rot);
 		camera.set_position(last_camera_pos);
 		camera.set_rotation(last_camera_rot);
-		camera.orbit(-rot, target);
+		/**
+		 * Great_circle_rotation is singular when from and to are
+		 * close to antipodal. Squaring the resulting quat removes
+		 * that singularity (but doubles the sensitivity)
+		 */
+		rot *= rot; 
+		if (nav_mode == NavMode::Orbit)
+		{
+			camera.orbit(-rot, target);
+		}
+		else if (nav_mode == NavMode::Free)
+		{
+			camera.rotate(-rot);
+		}
 	}
 }
 
@@ -110,8 +121,4 @@ void Viewer3D::mouse_scroll(float xoffset, float yoffset)
 
 void Viewer3D::key_pressed(int key, int action)
 {
-	if (key == GLFW_KEY_S && action == GLFW_PRESS)
-	{
-		smooth_shading = !smooth_shading;
-	}
 }

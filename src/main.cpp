@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 	/* Main window and context */
 	Myosotis app;
 	
-	if (!app.init(1024, 768))
+	if (!app.init(200, 100))
 	{
 		return (EXIT_FAILURE);
 	}
@@ -120,8 +120,9 @@ int main(int argc, char **argv)
 	/* Upload mesh */	
 	GLuint idx, pos, nml, tex, vao;
 	
-	glDisable(GL_DEBUG_OUTPUT);
-	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEBUG_OUTPUT);
+	glDisable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_BLEND);
