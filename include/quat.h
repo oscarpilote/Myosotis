@@ -63,6 +63,12 @@ T dot(const TQuat<T>& a, const TQuat<T>& b);
 template <typename T>
 inline T norm(const TQuat<T>& a);
 
+template <typename T>
+TQuat<T> pow(TQuat<T>& q, T t);
+
+template <typename T>
+TQuat<T> slerp(TQuat<T>& q0, TQuat<T>q1, T t);
+
 /* Methods implementation */
 
 template <typename T>
@@ -148,6 +154,21 @@ inline T norm(const TQuat<T>& a)
 	return sqrt(dot(a, a));
 }
 
+template <typename T>
+TQuat<T> pow(TQuat<T>& q, T t)
+{
+	double omega = acos((double)q.w);
+	T w = cos(t * omega);
+	T mult = sin(omega) ? sin(t * omega) / sin(omega) : t;
+
+	return {mult * q.xyz, w};
+}
+
+template <typename T>
+TQuat<T> slerp(TQuat<T>& q0, TQuat<T>q1, T t)
+{
+	return (q0 * pow(q0.inv() * q1, t));
+}
 
 
 

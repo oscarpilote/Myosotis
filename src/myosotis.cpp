@@ -103,6 +103,8 @@ bool Myosotis::new_frame()
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}
+	ImGui::DragFloat("Trackball sensitivity", &viewer.sensitivity, 0.1,
+		0.1, 2.0, "%.1f");
 	ImGui::ColorEdit3("Background color", (float*)&cfg.clear_color);
 	ImGui::Text("Average %.3f ms/frame (%.1f FPS)", 
 			1000.0f / io->Framerate, io->Framerate);

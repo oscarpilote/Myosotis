@@ -28,6 +28,7 @@ struct Viewer3D {
 	Camera camera;
 
 	/* Camera manipulation */
+	float sensitivity = 1.f;
 	Vec3  target = Vec3::Zero;
 	bool  is_mouse_pressed = false;
 	int   button;

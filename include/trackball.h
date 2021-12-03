@@ -9,8 +9,8 @@
  * Implemented using (the inverse of) a stereographic projection from a sphere 
  * of given radius and tangent to the screen plane at the screen center.
  *
- * NOTE: Screens coordinates at scaled so that the screen appears square
- *       and the sphere is tangent to the four screen sides.
+ * NOTE: Screens coordinates at scaled so that the screen appears square and
+ *       the sphere is tangent to the four screen sides.
  *
  * @param px - pixel x coord of click point (left is at 0).
  * @param py - pixel y coord of click point (top is at 0).

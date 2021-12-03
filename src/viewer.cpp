@@ -94,13 +94,8 @@ void Viewer3D::mouse_move(float px, float py)
 		rot.xyz = rotate(rot.xyz, last_camera_rot);
 		camera.set_position(last_camera_pos);
 		camera.set_rotation(last_camera_rot);
-		/**
-		 * Great_circle_rotation is singular when from and to are
-		 * close to antipodal. Squaring the resulting quat removes
-		 * that singularity (but doubles the sensitivity)
-		 */
-		rot *= rot; 
-		/* TODO adapt sensitivity to camera fov */
+		/* TODO adapt sensitivity to camera fov in free mode*/
+		rot = pow(rot, sensitivity);
 		if (nav_mode == NavMode::Orbit)
 		{
 			camera.orbit(-rot, target);
@@ -108,6 +103,20 @@ void Viewer3D::mouse_move(float px, float py)
 		else if (nav_mode == NavMode::Free)
 		{
 			camera.rotate(-rot);
+		}
+		/**
+		 * Great_circle_rotation is singular when from and to are
+		 * close to antipodal. To avoid that situation, we checkout
+		 * mouse move when the from and to first belong to two opposite
+		 * hemispheres.
+		 */
+		if (dot(trackball_v, last_trackball_v) < 0)
+		{
+			last_click_x = px;
+			last_click_y = py;
+			last_camera_pos  = camera.get_position();
+			last_camera_rot  = camera.get_rotation();
+			last_trackball_v = trackball_v;
 		}
 	}
 }
