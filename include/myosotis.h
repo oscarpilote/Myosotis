@@ -8,8 +8,9 @@ struct MyosotisCfg
 {
 	const char *glsl_version = "#version 150";
 	
-	bool smooth_shading    = true;
-	bool vsync             = true;
+	bool   smooth_shading  = true;
+	bool   vsync           = true;
+	float  camera_fov      = 45.0f; 
 	ImVec4 clear_color     = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 };
 

@@ -19,7 +19,7 @@ bool Viewer3D::init(int width, int height)
 	this->height = height;
 	
 	camera.set_aspect((float)width / height);
-	camera.set_fov(90.f);
+	camera.set_fov(45.f);
 
 	return (true);
 }
@@ -100,6 +100,7 @@ void Viewer3D::mouse_move(float px, float py)
 		 * that singularity (but doubles the sensitivity)
 		 */
 		rot *= rot; 
+		/* TODO adapt sensitivity to camera fov */
 		if (nav_mode == NavMode::Orbit)
 		{
 			camera.orbit(-rot, target);

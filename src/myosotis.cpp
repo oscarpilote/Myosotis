@@ -99,6 +99,10 @@ bool Myosotis::new_frame()
 	{
 		glfwSwapInterval(cfg.vsync);	
 	}
+	if (ImGui::DragFloat("FOV", &cfg.camera_fov, 1, 1, 120, "%.0f"))
+	{
+		viewer.camera.set_fov(cfg.camera_fov);
+	}
 	ImGui::ColorEdit3("Background color", (float*)&cfg.clear_color);
 	ImGui::Text("Average %.3f ms/frame (%.1f FPS)", 
 			1000.0f / io->Framerate, io->Framerate);
