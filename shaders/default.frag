@@ -12,12 +12,12 @@ layout (location = 3) uniform bool smooth_shading;
 layout (location = 0) out vec4 color;
 
 #define AMBIENT_COLOR vec3(1.f, 0.8f, 1.f)
-#define Ka 0.2f
-#define DIFFUSE_COLOR vec3(1.f, 1.f, 1.f)
-#define Kd 0.6f
-#define SPECULAR_COLOR vec3(.8f, .8f, 1.f)
+#define Ka 0.1f
+#define DIFFUSE_COLOR vec3(.88f, .75f, 0.43f)
+#define Kd .7f
+#define SPECULAR_COLOR vec3(1.f, 1.f, 1.f)
 #define Ks 0.2f
-#define shininess 80
+#define shininess 8
 
 
 void main() {
@@ -49,10 +49,10 @@ void main() {
 		//vec3 R = 2.f * dot(N, L) * N - L;
 		vec3 R = reflect(-L, N);
 		float ca = max(dot(R, V), 0.f); 
-		Is = pow(ca, shininess);
+		Is = pow(ca, shininess) * shininess / 4;
 	}
 	vec3 full = Ka * AMBIENT_COLOR;
-	full += Kd * Id * DIFFUSE_COLOR;
-	full += Ks * Is * SPECULAR_COLOR; 
+	full     += Kd * Id * DIFFUSE_COLOR;
+	full     += Ks * Is * SPECULAR_COLOR; 
 	color = vec4(full, 1.0f);
 }

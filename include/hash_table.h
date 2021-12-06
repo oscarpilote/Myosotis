@@ -69,13 +69,6 @@ static inline size_t hash_lookup(K *keys, size_t buckets, H hasher, K key)
 	return 0;
 }
 
-static size_t hashtable_buckets(size_t n)
-{
-	size_t ret = 1;
-	while (ret < n) ret *= 2;
-	return ret;
-}
-
 template<typename K, typename V, typename H>
 HashTable<K, V, H>::HashTable(size_t expected_keys, H hasher)
 {

@@ -53,7 +53,7 @@ constexpr bool reversed_y = NDC_REVERSED_Y ? true : false;
 constexpr bool reversed_z = NDC_REVERSED_Z ? true : false;
 constexpr bool z_zero_one = NDC_Z_ZERO_ONE ? true : false;
 
-constexpr Vec3 nwd_to_ndc(float x, float y, float depth)
+inline Vec3 nwd_to_ndc(float x, float y, float depth)
 {
 	Vec3 ndc {0, 0, 0};
 

@@ -12,12 +12,30 @@
 #include "myosotis.h"
 #include "viewer.h"
 
+static void
+resize_window_callback(GLFWwindow* window, int width, int height);
+
+static void
+mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+
+static void
+cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
+
+static void
+scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
+static void
+key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 static void
 GL_debug_callback(GLenum source, GLenum type, GLuint id,
 		GLenum severity, GLsizei length, const GLchar* message,
 		const void* user_param)
 {
+	(void) source;
+	(void) length;
+	(void) user_param;
+	(void) id;
 	if (type == GL_DEBUG_TYPE_ERROR) 
 	{
 		printf("GL CALLBACK: %s type = 0x%x, severity = 0x%x,\
@@ -45,8 +63,10 @@ bool Myosotis::init(int width, int height)
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
  
-	window = glfwCreateWindow(mode->width, mode->height, "Myosotis", 
-					glfwGetPrimaryMonitor(), NULL);
+	//window = glfwCreateWindow(mode->width, mode->height, "Myosotis", 
+	//glfwGetPrimaryMonitor(), NULL);
+	window = glfwCreateWindow(width, height, "Myosotis", NULL, NULL);
+	
 	if (!window) 
 	{
 		return (false);
@@ -190,6 +210,8 @@ scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 static void
 key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	(void) scancode;
+	(void) mods;
 	Myosotis* app = (Myosotis*)glfwGetWindowUserPointer(window);
 	
 	if (app->io->WantCaptureKeyboard)

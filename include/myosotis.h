@@ -11,7 +11,7 @@ struct MyosotisCfg
 	bool   smooth_shading  = true;
 	bool   vsync           = true;
 	float  camera_fov      = 45.0f; 
-	ImVec4 clear_color     = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	ImVec4 clear_color     = ImVec4(0.25f, 0.22f, 0.15f, 1.00f);
 };
 
 struct Myosotis {
@@ -30,17 +30,3 @@ struct Myosotis {
 };
 
 
-static void
-resize_window_callback(GLFWwindow* window, int width, int height);
-
-static void
-mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-
-static void
-cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
-
-static void
-scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-
-static void
-key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);

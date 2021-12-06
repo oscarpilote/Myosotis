@@ -67,7 +67,8 @@ int obj_to_mesh(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 
 	data.reserve_indices(index_count);
 
-	bool has_normals, has_uv;
+	bool has_normals = false;
+	bool has_uv = false;
 	for (size_t i = 0; i < obj_vertex_count; ++i)
 	{
 		has_normals |= (obj.indices[i].n != 0);

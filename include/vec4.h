@@ -21,7 +21,6 @@ struct alignas(4 * sizeof(T)) TVec4 {
 	
 	/* Constructors */
 	constexpr TVec4() = default;
-	constexpr TVec4(const TVec4& a);
 	constexpr TVec4(T x, T y, T z, T w);
 	constexpr TVec4(const TVec3<T>& xyz, T w);
 	explicit  TVec4(const T* t);
@@ -72,10 +71,6 @@ template <typename T>
 const TVec4<T> TVec4<T>::Zero  {0, 0, 0};
 
 /* Functions implementations */
-
-template <typename T>
-inline constexpr TVec4<T>::TVec4(const TVec4<T>& a): 
-	x{a.x}, y{a.y}, z{a.z}, w{a.w} {} 
 
 template <typename T>
 inline constexpr TVec4<T>::TVec4(T x, T y, T z, T w): x{x}, y{y}, z{z}, w{w} {} 

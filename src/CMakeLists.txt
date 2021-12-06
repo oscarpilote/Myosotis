@@ -24,6 +24,7 @@ add_executable(main
 	../extern/imgui/imgui_impl_opengl3.cpp
 	)
 
-target_compile_features(main PUBLIC cxx_std_20)
+target_compile_features(main PRIVATE cxx_std_17)
+target_compile_options(main PRIVATE -Wall -Wextra)
 target_link_libraries(main OpenGL glfw ${CMAKE_DL_LIBS})
 

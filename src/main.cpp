@@ -91,7 +91,6 @@ int main(int argc, char **argv)
 	{
 		timer_start();
 		int level = atoi(argv[2]);
-		Vec3 extent = bbox.max - bbox.min;
 		float cube_size = model_size;  
 		Grid grid = {bbox.min, cube_size / (1 << level)};
 		MeshData data2;
@@ -105,7 +104,7 @@ int main(int argc, char **argv)
 	/* Main window and context */
 	Myosotis app;
 	
-	if (!app.init(200, 100))
+	if (!app.init(1920, 1080))
 	{
 		return (EXIT_FAILURE);
 	}
@@ -121,8 +120,8 @@ int main(int argc, char **argv)
 	GLuint idx, pos, nml, tex, vao;
 	
 	glEnable(GL_DEBUG_OUTPUT);
-	glDisable(GL_CULL_FACE);
-	//glEnable(GL_CULL_FACE);
+	//glDisable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_BLEND);

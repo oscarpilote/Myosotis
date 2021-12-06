@@ -15,8 +15,6 @@ void timer_stop(const char *str = "")
 	gettimeofday(&tv1, NULL);
 	unsigned int mus = 1000000 * (tv1.tv_sec - tv0.tv_sec);
 	mus += (tv1.tv_usec - tv0.tv_usec);
-	int s = mus >= 1000000;
-	int ms = mus >= 1000;
 	printf("Timer %s: ", str);
 	if  (mus >= 1000000) 
 	{

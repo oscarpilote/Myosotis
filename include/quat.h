@@ -21,7 +21,6 @@ struct alignas(4 * sizeof(T)) TQuat {
 
 	/* Constructors */
 	TQuat() = default;
-	constexpr TQuat(const TQuat& q);
 	constexpr TQuat(T x, T y, T z, T w);
 	constexpr TQuat(TVec3<T> xyz, T w);
 
@@ -70,9 +69,6 @@ template <typename T>
 TQuat<T> slerp(TQuat<T>& q0, TQuat<T>q1, T t);
 
 /* Methods implementation */
-
-template <typename T>
-inline constexpr TQuat<T>::TQuat(const TQuat<T>& q): xyz{q.xyz}, w{q.w} {}
 
 template <typename T>
 inline constexpr TQuat<T>::TQuat(T x, T y, T z, T w): x{x}, y{y}, z{z}, w{w} {}
@@ -157,11 +153,14 @@ inline T norm(const TQuat<T>& a)
 template <typename T>
 TQuat<T> pow(TQuat<T>& q, T t)
 {
-	double omega = acos((double)q.w);
-	T w = cos(t * omega);
-	T mult = sin(omega) ? sin(t * omega) / sin(omega) : t;
+	T qw = q.w < -1 ? -1 : q.w > 1 ? 1 : q.w;
+	T omega = acos(qw);
+	T cto = cos(t * omega);
+	T sto = sin(t * omega);
+	T so  = sin(omega);
+	T mult = (so != 0) ? sto / so : t;
 
-	return {mult * q.xyz, w};
+	return {mult * q.xyz, cto};
 }
 
 template <typename T>

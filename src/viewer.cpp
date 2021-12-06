@@ -123,7 +123,7 @@ void Viewer3D::mouse_move(float px, float py)
 
 void Viewer3D::mouse_scroll(float xoffset, float yoffset)
 {
-
+	(void)xoffset;
 	Vec3 old_pos = camera.get_position();
 	Vec3 new_pos = target + exp(-ZOOM_SENSITIVITY * yoffset) * (old_pos - target);
 	camera.set_position(new_pos);
@@ -131,4 +131,6 @@ void Viewer3D::mouse_scroll(float xoffset, float yoffset)
 
 void Viewer3D::key_pressed(int key, int action)
 {
+	(void)key;
+	(void)action;
 }

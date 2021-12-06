@@ -13,7 +13,6 @@ struct TVec3 {
 
 	/* Constructors */
 	constexpr TVec3() = default;
-	constexpr TVec3(const TVec3& a);
 	constexpr TVec3(T x, T y, T z);
 	explicit  TVec3(const T* t);
 
@@ -67,9 +66,6 @@ template <typename T>
 TVec3<T> normalized(const TVec3<T>& a);
 
 /* Functions implementations */
-
-template <typename T>
-inline constexpr TVec3<T>::TVec3(const TVec3<T>& a): x{a.x}, y{a.y}, z{a.z} {} 
 
 template <typename T>
 inline constexpr TVec3<T>::TVec3(T x, T y, T z): x{x}, y{y}, z{z} {} 
