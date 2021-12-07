@@ -6,6 +6,8 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "meshoptimizer/src/meshoptimizer.h"
+
 #ifndef GL_GLEXT_PROTOTYPES
 #define GL_GLEXT_PROTOTYPES 1
 #endif
@@ -25,6 +27,65 @@
 void syntax(char *argv[])
 {
 	printf("Syntax : %s mesh_file_name [max_level]\n", argv[0]);
+}
+
+void meshopt_statistics(const char *name, const MeshData& data, 
+			const Mesh& mesh)
+{
+	uint32_t *idx = data.indices + mesh.index_offset;
+	float *pos = (float*)(data.positions + mesh.vertex_offset);
+	uint32_t nidx = mesh.index_count;
+	uint32_t nvtx = mesh.vertex_count;
+	
+	const size_t kCacheSize = 16;
+	meshopt_VertexCacheStatistics vcs = meshopt_analyzeVertexCache(
+				idx, nidx, nvtx, kCacheSize, 0, 0);
+	meshopt_VertexFetchStatistics vfs = meshopt_analyzeVertexFetch(
+				idx, nidx, nvtx, sizeof(Vec3));
+	meshopt_OverdrawStatistics os = meshopt_analyzeOverdraw(
+				idx, nidx, pos, nvtx, sizeof(Vec3));
+	meshopt_VertexCacheStatistics vcs_nv = meshopt_analyzeVertexCache(
+			idx, nidx, nvtx, 32, 32, 32);
+	meshopt_VertexCacheStatistics vcs_amd = meshopt_analyzeVertexCache(
+			idx, nidx, nvtx, 14, 64, 128);
+	meshopt_VertexCacheStatistics vcs_intel = meshopt_analyzeVertexCache(
+			idx, nidx, nvtx, 128, 0, 0);
+
+	printf("%-9s: ACMR %.2f ATVR %.2f (NV %.2f AMD %.2f Intel %.2f) "
+	       "Overfetch %.2f Overdraw %.2f\n", name, vcs.acmr, vcs.atvr, 
+	       vcs_nv.atvr, vcs_amd.atvr, vcs_intel.atvr, vfs.overfetch, 
+	       os.overdraw);
+}
+
+void meshopt_optimize(MeshData& data, const Mesh& mesh)
+{
+	uint32_t *idx = data.indices + mesh.index_offset;
+	float *pos = (float*)(data.positions + mesh.vertex_offset);
+	float *nml = (float*)(data.normals + mesh.vertex_offset);
+	float *uv0 = (float*)(data.uv[0] + mesh.vertex_offset);
+	uint32_t nidx = mesh.index_count;
+	uint32_t nvtx = mesh.vertex_count;
+		
+	meshopt_optimizeVertexCache(idx, idx, nidx, nvtx);
+		
+	const float kThreshold = 1.01f;
+	meshopt_optimizeOverdraw(idx, idx, nidx, pos, nvtx, sizeof(Vec3), 
+				 kThreshold);
+
+	TArray<unsigned int> remap(nvtx);
+	meshopt_optimizeVertexFetchRemap(&remap[0], idx, nidx, nvtx);
+	meshopt_remapIndexBuffer(idx, idx, nidx, &remap[0]);
+	meshopt_remapVertexBuffer(pos, pos, nvtx, sizeof(Vec3), &remap[0]);
+	if (data.vtx_attribs & VertexAttrib::NML)
+	{
+		meshopt_remapVertexBuffer(nml, nml, nvtx, sizeof(Vec3), 
+					  &remap[0]);
+	}
+	if (data.vtx_attribs & VertexAttrib::UV0)
+	{
+		meshopt_remapVertexBuffer(uv0, uv0, nvtx, sizeof(Vec2),
+					  &remap[0]);
+	}
 }
 
 int main(int argc, char **argv)
@@ -72,6 +133,16 @@ int main(int argc, char **argv)
 			mesh.vertex_count);
 	timer_stop("loading mesh");
 
+	if (argc > 2)
+	{
+		timer_start();
+		meshopt_statistics("Raw", data, mesh);
+		timer_start();
+		meshopt_optimize(data, mesh);
+		timer_stop("optimize mesh");
+		meshopt_statistics("Optimized", data, mesh);
+	}
+
 	if (!(data.vtx_attribs & VertexAttrib::NML))
 	{
 		timer_start();
@@ -87,10 +158,10 @@ int main(int argc, char **argv)
 	float model_size = std::max(std::max(model_extent.x, model_extent.y), model_extent.z);
 	timer_stop("compute_mesh_bounds");
 
-	if (argc > 2) 
+	if (argc > 3) 
 	{
 		timer_start();
-		int level = atoi(argv[2]);
+		int level = atoi(argv[3]);
 		float cube_size = model_size;  
 		Grid grid = {bbox.min, cube_size / (1 << level)};
 		MeshData data2;
