@@ -23,8 +23,8 @@ union CellCoord {
 };
 
 struct CellCoordHasher {
-	static constexpr CellCoord empty_key = {0, 0, 0, 1};
-	size_t hash(CellCoord coord) const {return coord.key;}
+	static constexpr CellCoord empty_key = {{0, 0, 0, 1}};
+	size_t hash(CellCoord coord)   const {return coord.key;}
 	bool is_empty(CellCoord coord) const {return coord.unused != 0;}
 	bool is_equal(CellCoord c1, CellCoord c2) const {return c1.key == c2.key;}
 };

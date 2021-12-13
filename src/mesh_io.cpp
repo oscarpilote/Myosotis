@@ -44,17 +44,15 @@ bool ObjVertexHasher::is_equal(fastObjIndex key1, fastObjIndex key2) const
 {
 	bool res = (pos[key1.p] == pos[key2.p]);
 	if (res && has_normals) res &= (nml[key1.n] == nml[key2.n]);
-	if (res && has_uv)     res &= ( uv[key1.t] ==  uv[key2.t]);
+	if (res && has_uv)      res &= ( uv[key1.t] ==  uv[key2.t]);
 
 	return (res);	
 }	
 
-
-int obj_to_mesh(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
+static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 {
 	data.clear();
 	data.vtx_attribs = VertexAttrib::POS;
-	
 
 	size_t obj_vertex_count = 0;
 	size_t index_count = 0;
@@ -158,11 +156,24 @@ int obj_to_mesh(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 	bool shrink = true;
 	data.reserve_vertices(vertex_count, shrink);
 	
-	return (0);
+	return (EXIT_SUCCESS);
+}
+
+int load_obj(const char *filename, MeshData& data, Mesh& mesh)
+{
+	fastObjMesh *obj = fast_obj_read(filename);
+	if (obj == nullptr)
+	{
+		return (EXIT_FAILURE);
+	}
+	int res = load_obj(*obj, data, mesh);
+	fast_obj_destroy(obj);
+
+	return (res);
 }
 
 
-int ply_to_mesh(const char* filename, MeshData &data, Mesh &mesh)
+int load_ply(const char* filename, MeshData &data, Mesh &mesh)
 {
 	using namespace miniply;
 	PLYReader reader(filename);

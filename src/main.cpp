@@ -22,7 +22,9 @@
 #include "mesh_grid.h"
 #include "mesh_utils.h"
 #include "chrono.h"
+#include "shaders.h"
 #include "myosotis.h"
+
 
 void syntax(char *argv[])
 {
@@ -103,20 +105,18 @@ int main(int argc, char **argv)
 
 	{
 		size_t len = strlen(argv[1]);
-		if (strncmp(argv[1] + (len-3), "obj", 3) == 0)
+		const char* ext = argv[1] + (len-3);
+		if (strncmp(ext, "obj", 3) == 0)
 		{
-			fastObjMesh *obj = fast_obj_read(argv[1]);
-			if (obj == nullptr)
+			if (load_obj(argv[1], data, mesh))
 			{
 				printf("Error reading Wavefront file.\n");
 				return (EXIT_FAILURE);
 			}
-			obj_to_mesh(*obj, data, mesh);
-			fast_obj_destroy(obj);
 		}
-		else if (strncmp(argv[1] + (len-3), "ply", 3) == 0)
+		else if (strncmp(ext, "ply", 3) == 0)
 		{
-			if (ply_to_mesh(argv[1], data, mesh))
+			if (load_ply(argv[1], data, mesh))
 			{
 				printf("Error reading PLY file.\n");
 				return (EXIT_FAILURE);
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 		}
 		else 
 		{
-			printf("Unsupported file type: %s\n", argv[1]);
+			printf("Unsupported file type extension: %s\n", ext);
 			return (EXIT_FAILURE);
 		}
 	}
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 	Bbox bbox = compute_mesh_bounds(mesh, data);
 	Vec3 model_center = (bbox.min + bbox.max) * 0.5f;
 	Vec3 model_extent = (bbox.max - bbox.min);
-	float model_size = std::max(std::max(model_extent.x, model_extent.y), model_extent.z);
+	float model_size = max(model_extent);
 	timer_stop("compute_mesh_bounds");
 
 	if (argc > 3) 
@@ -167,7 +167,8 @@ int main(int argc, char **argv)
 		MeshData data2;
 		TArray<Mesh> cells;
 		CellTable coord_to_cell_idx(1 << (2 * level + 3));
-		split_mesh_with_grid(grid, data, mesh, data2, cells, coord_to_cell_idx);	
+		split_mesh_with_grid(grid, data, mesh, data2, cells, 
+				     coord_to_cell_idx);	
 		printf("Cells : %zu\n", cells.size);
 		timer_stop("split_mesh_with_grid");
 	}
@@ -182,166 +183,168 @@ int main(int argc, char **argv)
 
 	/* Init camera position */	
 	app.viewer.target = model_center;
-	app.viewer.camera.set_position(model_center + Vec3(0, 0, model_size));
+	Vec3 start_pos = (model_center + 2.f * Vec3(0, 0, model_size));
+	app.viewer.camera.set_position(start_pos);
 	app.viewer.camera.set_near(0.001 * model_size);
 	app.viewer.camera.set_far(100 * model_size);
+	
 
+	glEnable(GL_DEBUG_OUTPUT);
 
 	/* Upload mesh */	
-	GLuint idx, pos, nml, tex, vao;
+
+	/* Index buffer */
+	GLuint idx;
+	glGenBuffers(1, &idx);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+		mesh.index_count * sizeof(uint32_t),
+		data.indices + mesh.index_offset,
+		GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	
-	glEnable(GL_DEBUG_OUTPUT);
+	/* Position buffer */
+	GLuint pos;
+	glGenBuffers(1, &pos);
+	glBindBuffer(GL_ARRAY_BUFFER, pos);
+	glBufferData(GL_ARRAY_BUFFER,
+			mesh.vertex_count * sizeof(Vec3),
+			data.positions + mesh.vertex_offset,
+			GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	/* Normal buffer */
+	GLuint nml;
+	glGenBuffers(1, &nml);
+	glBindBuffer(GL_ARRAY_BUFFER, nml);
+	glBufferData(GL_ARRAY_BUFFER,
+			mesh.vertex_count * sizeof(Vec3),
+			data.normals + mesh.vertex_offset,
+			GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	/* Setup VAOs */
+
+	/* Default VAO */
+	GLuint default_vao;
+	glGenVertexArrays(1, &default_vao);
+	glBindVertexArray(default_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, pos);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), 
+				(void *)0);
+	glEnableVertexAttribArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, nml);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT),
+				(void *)0);
+	glEnableVertexAttribArray(1);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	/* Vertex fetch VAO */
+	GLuint fetch_vao;
+	glGenVertexArrays(1, &fetch_vao);
+	glBindVertexArray(fetch_vao);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	/* Vertex pull VAO */
+	GLuint null_vao;
+	glGenVertexArrays(1, &null_vao);
+	glBindVertexArray(null_vao);
+	glBindVertexArray(0);
+
+	/* Setup programs */
+	
+	GLint mesh_prg = create_shader("./shaders/default.vert", 
+					  "./shaders/default.frag");
+	if (mesh_prg < 0) 
+	{
+		return EXIT_FAILURE;
+	}
+	
+	GLint fetch_mesh_prg = create_shader("./shaders/fetch_mesh.vert", 
+					  "./shaders/default.frag");
+	if (fetch_mesh_prg < 0) 
+	{
+		return EXIT_FAILURE;
+	}
+	
+	GLint nml_prg = create_shader("./shaders/face_normals.vert", 
+					  "./shaders/face_normals.frag");
+	if (nml_prg < 0) 
+	{
+		return EXIT_FAILURE;
+	}
+	
+	/* Setup some rendering options */
+
 	//glDisable(GL_CULL_FACE);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &idx);
-	glGenBuffers(1, &pos);
-	glGenBuffers(1, &nml);
-	glGenBuffers(1, &tex);
-
-	glBindVertexArray(vao);
-	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		mesh.index_count * sizeof(uint32_t),
-		data.indices + mesh.index_offset,
-		GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, pos);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), 
-			(void *)0);
-	glEnableVertexAttribArray(0);
-	glBufferData(GL_ARRAY_BUFFER,
-			mesh.vertex_count * sizeof(Vec3),
-			data.positions + mesh.vertex_offset,
-			GL_STATIC_DRAW);
-	
-	if (data.vtx_attribs & VertexAttrib::NML)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, nml);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
-				3 * sizeof(GL_FLOAT), (void *)0);
-		glEnableVertexAttribArray(1);
-		glBufferData(GL_ARRAY_BUFFER,
-				mesh.vertex_count * sizeof(Vec3),
-				data.normals + mesh.vertex_offset,
-				GL_STATIC_DRAW);
-	}
-
-	if (data.vtx_attribs & VertexAttrib::UV0)
-	{
-		glBindBuffer(GL_ARRAY_BUFFER, tex);
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE,
-				2 * sizeof(GL_FLOAT), (void *)0);
-		glEnableVertexAttribArray(2);
-		glBufferData(GL_ARRAY_BUFFER,
-				mesh.vertex_count * sizeof(Vec2),
-				data.uv[0] + mesh.vertex_offset,
-				GL_STATIC_DRAW);
-	}
-	
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-	/* Create shaders */
-	int success;
-	GLchar infoLog[512];
-
-	GLint vert = glCreateShader(GL_VERTEX_SHADER);
-	FILE *f = fopen("./shaders/default.vert", "rb");
-	if (!f) {
-		printf("No vertex shader!\n");
-		return (EXIT_FAILURE);
-	}
-	fseek(f, 0, SEEK_END);
-	int fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);
-	char *source[] = {NULL};
-	source[0] = static_cast<char *>(malloc((fsize + 1) ));
-	fread(source[0], 1, fsize, f);
-	fclose(f);
-	source[0][fsize] = '\0';
-	glShaderSource(vert, 1, (const char* const*) source, NULL);
-	glCompileShader(vert);
-	glGetShaderiv(vert, GL_COMPILE_STATUS, &success);
-	if (!success) 
-	{
-    		glGetShaderInfoLog(vert, 512, NULL, infoLog);
-		printf("ERROR: compiling of %s shader %s failed !\n%s\n", 
-				"GL_VERTEX_SHADER", "vertex", infoLog);
-	}
-
-	GLint frag = glCreateShader(GL_FRAGMENT_SHADER);
-	FILE *g = fopen("./shaders/default.frag", "rb");
-	if (!g) {
-		printf("No fragment shader!\n");
-		return (EXIT_FAILURE);
-	}
-	fseek(g, 0, SEEK_END);
-	int gsize = ftell(g);
-	fseek(g, 0, SEEK_SET);
-	char *source2[] = {NULL};
-	source2[0] = static_cast<char *>(malloc((gsize + 1)));
-	fread(source2[0], 1, gsize, g);
-	fclose(g);
-	source2[0][gsize] = '\0';
-	glShaderSource(frag, 1, (const char* const*) source2, NULL);
-	glCompileShader(frag);
-	glGetShaderiv(frag, GL_COMPILE_STATUS, &success);
-	if (!success) 
-	{
-    		glGetShaderInfoLog(frag, 512, NULL, infoLog);
-		printf("ERROR: compiling of %s shader %s failed !\n%s\n", 
-				"GL_FRAGMENT_SHADER", "frag", infoLog);
-		return (EXIT_FAILURE);
-	}
-
-	GLint prg = glCreateProgram();
-	glAttachShader(prg, vert);
-	glAttachShader(prg, frag);
-	glLinkProgram(prg);
-	glGetProgramiv(prg, GL_LINK_STATUS, &success);
-	if (!success) 
-	{
-		printf("Failed to link shaders !\n");
-		return (EXIT_FAILURE);
-	}
-	glDetachShader(prg, vert);
-	glDetachShader(prg, frag);
-	glDeleteShader(vert);
-	glDeleteShader(frag);
-
-
-
 	/* Main loop */
 	while (!app.should_close()) {
 		
 		app.new_frame();
 
-		glUseProgram(prg);
-		glBindVertexArray(vao);
 		
 		glClearColor(app.cfg.clear_color.x, app.cfg.clear_color.y, 
 			     app.cfg.clear_color.z, app.cfg.clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		/* Update uniform data */
 		Mat4 proj = app.viewer.camera.view_to_clip();	
 		Mat4 vm = app.viewer.camera.world_to_view();
 		Vec3 camera_pos = app.viewer.camera.get_position();
+		
+		/* Draw mesh */
+		if (app.cfg.draw_mesh)
+		{
+			glUseProgram(mesh_prg);
+			glBindVertexArray(default_vao);
+			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
+			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
+			glUniform3fv(2, 1, &camera_pos[0]);
+			glUniform1i(3, app.cfg.smooth_shading);
+			glDrawElements(GL_TRIANGLES, mesh.index_count,
+					GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
+		else
+		{
+			glUseProgram(fetch_mesh_prg);
+			glBindVertexArray(fetch_vao);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pos);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, nml);
+			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
+			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
+			glUniform3fv(2, 1, &camera_pos[0]);
+			glUniform1i(3, app.cfg.smooth_shading);
+			glDrawElements(GL_TRIANGLES, mesh.index_count,
+					GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+		}
 
-		glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
-		glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
-		glUniform3fv(2, 1, &camera_pos[0]);
-		glUniform1i(3, app.cfg.smooth_shading);
-		glDrawElements(GL_TRIANGLES, mesh.index_count, GL_UNSIGNED_INT,
-				0);
+
+		/* Draw normals */
+		if (app.cfg.draw_normals)
+		{
+			glUseProgram(nml_prg);
+			glBindVertexArray(null_vao);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, idx);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pos);
+			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
+			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
+			glUniform3fv(2, 1, &camera_pos[0]);
+			glDrawArrays(GL_LINES, 0, 2 * mesh.index_count / 3);
+			glBindVertexArray(0);
+		}
 		
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		

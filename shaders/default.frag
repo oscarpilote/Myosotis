@@ -20,7 +20,8 @@ layout (location = 0) out vec4 color;
 #define shininess 8
 
 
-void main() {
+void main() 
+{
 
 	vec3 V = normalize(_V);
 	vec3 L = normalize(_L);

@@ -14,6 +14,7 @@ add_executable(myosotis
 	mesh_remap.cpp
 	mesh.cpp
 	chrono.cpp
+	shaders.cpp
 	myosotis.cpp
 	../extern/miniply/miniply.cpp
 	../extern/imgui/imgui.cpp

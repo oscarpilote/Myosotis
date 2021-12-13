@@ -8,6 +8,8 @@ struct MyosotisCfg
 {
 	const char *glsl_version = "#version 150";
 	
+	bool   draw_mesh       = true;
+	bool   draw_normals    = false;
 	bool   smooth_shading  = true;
 	bool   vsync           = true;
 	float  camera_fov      = 45.0f; 

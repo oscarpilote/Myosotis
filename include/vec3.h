@@ -65,6 +65,15 @@ inline T norm(const TVec3<T> a);
 template <typename T>
 TVec3<T> normalized(const TVec3<T>& a);
 
+template <typename T>
+T max(const TVec3<T>& a);
+
+template <typename T>
+T min(const TVec3<T>& a);
+
+template <typename T>
+TVec3<T> abs(const TVec3<T>& a);
+
 /* Functions implementations */
 
 template <typename T>
@@ -184,4 +193,24 @@ TVec3<T> normalized(const TVec3<T>& a)
 {
 	T len = norm(a);
 	return (len == 0) ? a : a * (1.f / len);
+}
+
+template <typename T>
+T max(const TVec3<T>& a)
+{
+	return (a.y > a.x ? (a.z > a.y ? a.z : a.y) : (a.z > a.x ? a.z : a.x));  
+}
+
+template <typename T>
+T min(const TVec3<T>& a)
+{
+	return (a.y < a.x ? (a.z < a.y ? a.z : a.y) : (a.z < a.x ? a.z : a.x));  
+}
+
+template <typename T>
+TVec3<T> abs(const TVec3<T>& a)
+{
+	return {a.x < 0 ? -a.x : a.x, 
+		a.y < 0 ? -a.y : a.y, 
+		a.z < 0 ? -a.z : a.z}; 
 }

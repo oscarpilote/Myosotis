@@ -64,7 +64,7 @@ bool Myosotis::init(int width, int height)
 	glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
  
 	//window = glfwCreateWindow(mode->width, mode->height, "Myosotis", 
-	//glfwGetPrimaryMonitor(), NULL);
+	//                          glfwGetPrimaryMonitor(), NULL);
 	window = glfwCreateWindow(width, height, "Myosotis", NULL, NULL);
 	
 	if (!window) 
@@ -114,6 +114,8 @@ bool Myosotis::new_frame()
 	
 	ImGui::NewFrame();
 	ImGui::Begin("Controls");
+	ImGui::Checkbox("Draw mesh", &cfg.draw_mesh);
+	ImGui::Checkbox("Draw normals", &cfg.draw_normals);
 	ImGui::Checkbox("Smooth shading", &cfg.smooth_shading);
 	if (ImGui::Checkbox("Use Vsync", &cfg.vsync))
 	{
@@ -123,9 +125,9 @@ bool Myosotis::new_frame()
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}
-	ImGui::DragFloat("Trackball sensitivity", &viewer.sensitivity, 0.1,
-		0.1, 2.0, "%.1f");
-	ImGui::ColorEdit3("Background color", (float*)&cfg.clear_color);
+	//ImGui::DragFloat("Trackball sensitivity", &viewer.sensitivity, 0.1,
+	//	0.1, 2.0, "%.1f");
+	//ImGui::ColorEdit3("Background color", (float*)&cfg.clear_color);
 	ImGui::Text("Average %.3f ms/frame (%.1f FPS)", 
 			1000.0f / io->Framerate, io->Framerate);
 	ImGui::End();

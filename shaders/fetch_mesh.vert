@@ -1,9 +1,9 @@
 #version 430 core
 
 /* In variables */
-layout (location = 0) in vec3 pos;
-layout (location = 1) in vec3 nml;
-layout (location = 2) in vec2 tex;
+layout(std430, binding = 1) restrict readonly buffer positions {float Pos[];};
+layout(std430, binding = 2) restrict readonly buffer normals   {float Nml[];};
+
 
 
 /* Uniform variables */
@@ -19,6 +19,9 @@ layout (location = 2) out vec3 L;  /* Light vector  */
 
 void main() 
 {
+	uint i = gl_VertexID;
+	vec3 pos = vec3(Pos[3 * i + 0], Pos[3 * i + 1], Pos[3 * i + 2]);
+	vec3 nml = vec3(Nml[3 * i + 0], Nml[3 * i + 1], Nml[3 * i + 2]);
 
 	N = nml;
 	V = camera_pos - pos;
