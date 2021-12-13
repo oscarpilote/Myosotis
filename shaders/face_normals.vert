@@ -21,9 +21,9 @@ void main(void)
 	uint tri_idx = gl_VertexID / 2;
 	bool end_pt  = (gl_VertexID & 1) == 1;
 
-	uint idx1 = indices[3 * tri_idx + 0];
-	uint idx2 = indices[3 * tri_idx + 1];
-	uint idx3 = indices[3 * tri_idx + 2];
+	uint idx1 = Idx[3 * tri_idx + 0];
+	uint idx2 = Idx[3 * tri_idx + 1];
+	uint idx3 = Idx[3 * tri_idx + 2];
 
 	vec3 v1 = vec3(Pos[3 * idx1 + 0], Pos[3 * idx1 + 1], Pos[3 * idx1 + 2]);
 	vec3 v2 = vec3(Pos[3 * idx2 + 0], Pos[3 * idx2 + 1], Pos[3 * idx2 + 2]);
