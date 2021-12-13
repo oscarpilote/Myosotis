@@ -94,8 +94,10 @@ void compute_mesh_normals(const Mesh& mesh, MeshData& data)
 void copy_indices(MeshData& dst, size_t idx_dst, const MeshData& src, 
 		  size_t idx_src, size_t num, size_t vtx_offset)
 {
-	static_assert(sizeof(*dst.indices) == sizeof(*src.indices), 
-		"Error in copy_vertices: dst and src indices type mismatch.");
+	static_assert(
+		sizeof(*dst.indices) == sizeof(*src.indices), 
+		"Error in copy_vertices: dst and src indices type mismatch."
+		);
 	
 	assert(src.idx_capacity >= idx_src + num);
 	assert(dst.idx_capacity >= idx_dst + num);

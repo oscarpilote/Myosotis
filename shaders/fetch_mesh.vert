@@ -4,8 +4,6 @@
 layout(std430, binding = 1) restrict readonly buffer positions {float Pos[];};
 layout(std430, binding = 2) restrict readonly buffer normals   {float Nml[];};
 
-
-
 /* Uniform variables */
 layout (location = 0) uniform mat4 vm;
 layout (location = 1) uniform mat4 proj;
