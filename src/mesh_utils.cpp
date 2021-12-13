@@ -91,67 +91,81 @@ void compute_mesh_normals(const Mesh& mesh, MeshData& data)
 	}
 }
 
-void copy_indices(MeshData& dst, size_t idx_dst, const MeshData& src, 
-		  size_t idx_src, size_t num, size_t vtx_offset)
+void copy_indices(MeshData& dst, size_t dst_off, const MeshData& src, 
+		  size_t src_off, size_t idx_num, size_t vtx_off)
 {
 	static_assert(
 		sizeof(*dst.indices) == sizeof(*src.indices), 
 		"Error in copy_vertices: dst and src indices type mismatch."
 		);
 	
-	assert(src.idx_capacity >= idx_src + num);
-	assert(dst.idx_capacity >= idx_dst + num);
+	assert(src.idx_capacity >= src_off + idx_num);
+	assert(dst.idx_capacity >= dst_off + idx_num);
 
 	void *to;
 	void *from;
 
-	to   = &dst.indices[idx_dst]; 
-	from = &src.indices[idx_src]; 
-	memcpy(to, from, num * sizeof(*src.indices));
+	to   = &dst.indices[dst_off]; 
+	from = &src.indices[src_off]; 
+	memcpy(to, from, idx_num * sizeof(*src.indices));
 
-	if (vtx_offset)
+	if (vtx_off)
 	{
-		for (size_t i = 0; i < num; ++i)
+		for (size_t i = 0; i < idx_num; ++i)
 		{
-			dst.indices[idx_dst + i] += vtx_offset;
+			dst.indices[dst_off + i] += vtx_off;
 		}
 	}
 }
 
-void copy_vertices(MeshData& dst, size_t idx_dst, const MeshData& src,
-		   size_t idx_src, size_t num)
+void copy_vertices(MeshData& dst, size_t dst_off, const MeshData& src,
+		   size_t src_off, size_t vtx_num, size_t vtx_off)
 {
 	assert((src.vtx_attribs & dst.vtx_attribs) == dst.vtx_attribs);
 	
-	assert(src.vtx_capacity >= idx_src + num);
-	assert(dst.vtx_capacity >= idx_dst + num);
+	assert(src.vtx_capacity >= src_off + vtx_num);
+	assert(dst.vtx_capacity >= dst_off + vtx_num);
 
 	void *to;
 	void *from;
 
-	to   = &dst.positions[idx_dst]; 
-	from = &src.positions[idx_src]; 
-	memcpy(to, from, num * sizeof(*src.positions));
+	to   = &dst.positions[dst_off]; 
+	from = &src.positions[src_off]; 
+	memcpy(to, from, vtx_num * sizeof(*src.positions));
 
 	if (dst.vtx_attribs & VertexAttrib::NML)
 	{
-		to   = &dst.normals[idx_dst]; 
-		from = &src.normals[idx_src]; 
-		memmove(to, from, num * sizeof(*src.normals));
+		to   = &dst.normals[dst_off]; 
+		from = &src.normals[src_off]; 
+		memmove(to, from, vtx_num * sizeof(*src.normals));
 	}
 
 	if (dst.vtx_attribs & VertexAttrib::UV0)
 	{
-		to   = &dst.uv[0][idx_dst]; 
-		from = &src.uv[0][idx_src]; 
-		memmove(to, from, num * sizeof(*src.uv[0]));
+		to   = &dst.uv[0][dst_off]; 
+		from = &src.uv[0][src_off]; 
+		memmove(to, from, vtx_num * sizeof(*src.uv[0]));
 	}
 	
 	if (dst.vtx_attribs & VertexAttrib::UV1)
 	{
-		to   = &dst.uv[1][idx_dst]; 
-		from = &src.uv[1][idx_src]; 
-		memmove(to, from, num * sizeof(*src.uv[1]));
+		to   = &dst.uv[1][dst_off]; 
+		from = &src.uv[1][src_off]; 
+		memmove(to, from, vtx_num * sizeof(*src.uv[1]));
+	}
+	
+	if (dst.vtx_attribs & VertexAttrib::PAR)
+	{
+		to   = &dst.parents[dst_off]; 
+		from = &src.parents[src_off]; 
+		memmove(to, from, vtx_num * sizeof(*src.parents));
+		if (vtx_off)
+		{
+			for (size_t i = 0; i < vtx_num; ++i)
+			{
+				dst.parents[dst_off + i] += vtx_off;
+			}
+		}
 	}
 }
 
@@ -160,15 +174,15 @@ void group_meshes(const Mesh* meshes, size_t nmesh, const MeshData& src,
 {
 	dst.vtx_attribs = src.vtx_attribs;
 	
-	group.index_offset = 0;
+	group.index_offset  = 0;
 	group.vertex_offset = 0;
 
-	size_t total_indices = 0;
+	size_t total_indices  = 0;
 	size_t total_vertices = 0;
 	
 	for (size_t i = 0; i < nmesh; ++i)
 	{
-		total_indices += meshes[i].index_count;
+		total_indices  += meshes[i].index_count;
 		total_vertices += meshes[i].vertex_count;
 	}
 	
@@ -182,20 +196,21 @@ void group_meshes(const Mesh* meshes, size_t nmesh, const MeshData& src,
 	total_vertices = 0;
 	for (size_t i = 0; i < nmesh; ++i)
 	{
-		size_t idx_dst, idx_src, num, vtx_offset;
+		size_t dst_off, src_off, idx_num, vtx_num, vtx_off;
 
-		idx_src = meshes[i].index_offset;
-		idx_dst = total_indices;
-		num = meshes[i].index_count;
-		vtx_offset = total_vertices;
-		copy_indices(dst, idx_dst, src, idx_src, num, vtx_offset);
+		src_off = meshes[i].index_offset;
+		dst_off = total_indices;
+		idx_num = meshes[i].index_count;
+		vtx_off = total_vertices;
+		copy_indices(dst, dst_off, src, src_off, idx_num, vtx_off);
 
-		idx_src = meshes[i].vertex_offset;
-		idx_dst = total_vertices;
-		num = meshes[i].vertex_count;
-		copy_vertices(dst, idx_dst, src, idx_src, num);
+		src_off = meshes[i].vertex_offset;
+		dst_off = total_vertices;
+		vtx_num = meshes[i].vertex_count;
+		vtx_off = total_vertices;
+		copy_vertices(dst, dst_off, src, src_off, vtx_num, vtx_off);
 		
-		total_indices += meshes[i].index_count;
+		total_indices  += meshes[i].index_count;
 		total_vertices += meshes[i].vertex_count;
 	}
 }

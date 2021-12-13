@@ -12,48 +12,59 @@ void MeshData::clear()
 	idx_capacity = 0;
 	free(positions);
 	free(normals);
-	for (int i = 0; i < MAX_UV_MAPS; ++i)
-	{
-		free(uv[i]);
-	}
+	free(uv[0]);
+	free(uv[1]);
+	free(parents);
 	vtx_capacity = 0;
 }
 
-void MeshData::reserve_indices(size_t count, bool shrink)
+void MeshData::reserve_indices(size_t num, bool shrink)
 {
-	assert(count > 0);
+	assert(num > 0);
 
-	if ((count <= idx_capacity) && (!shrink))
+	if ((num <= idx_capacity) && (!shrink))
 	{
 		return;
 	}
 	
-	indices = (uint32_t *)realloc(indices, count * sizeof(uint32_t));
-	idx_capacity = count;
+	indices = (uint32_t *)realloc(indices, num * sizeof(uint32_t));
+	idx_capacity = num;
 }
 
-void MeshData::reserve_vertices(size_t count, bool shrink)
+void MeshData::reserve_vertices(size_t num, bool shrink)
 {
-	assert(count > 0);
+	assert(num > 0);
 
-	if ((count <= vtx_capacity) && (!shrink))
+	if ((num <= vtx_capacity) && (!shrink))
 	{
 		return;
 	}
 
-	positions = (Vec3 *)realloc(positions, count * sizeof(Vec3));
+	if (true)
+	{
+		positions = (Vec3 *)realloc(positions, num * sizeof(Vec3));
+	}
+	
 	if (vtx_attribs & VertexAttrib::NML)
 	{
-		normals = (Vec3 *)realloc(normals, count * sizeof(Vec3));
+		normals = (Vec3 *)realloc(normals, num * sizeof(Vec3));
 	}
+	
 	if (vtx_attribs & VertexAttrib::UV0)
 	{
-		uv[0] = (Vec2 *)realloc(uv[0], count * sizeof(Vec2));
+		uv[0] = (Vec2 *)realloc(uv[0], num * sizeof(Vec2));
 	}
+	
 	if (vtx_attribs & VertexAttrib::UV1)
 	{
-		uv[1] = (Vec2 *)realloc(uv[1], count * sizeof(Vec2));
+		uv[1] = (Vec2 *)realloc(uv[1], num * sizeof(Vec2));
 	}
-	vtx_capacity = count;
+	
+	if (vtx_attribs & VertexAttrib::PAR)
+	{
+		parents = (uint32_t *)realloc(parents, num * sizeof(uint32_t));
+	}
+	
+	vtx_capacity = num;
 }
 

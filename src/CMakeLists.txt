@@ -16,7 +16,13 @@ add_executable(myosotis
 	chrono.cpp
 	shaders.cpp
 	myosotis.cpp
+	)
+
+add_library(miniply
 	../extern/miniply/miniply.cpp
+	)
+
+add_library(imgui_glfw_opengl3
 	../extern/imgui/imgui.cpp
 	../extern/imgui/imgui_draw.cpp
 	../extern/imgui/imgui_tables.cpp
@@ -25,10 +31,18 @@ add_executable(myosotis
 	../extern/imgui/imgui_impl_opengl3.cpp
 	)
 
+add_library(meshoptimizer STATIC IMPORTED)
+set_target_properties(meshoptimizer PROPERTIES
+	IMPORTED_LOCATION
+	"${CMAKE_SOURCE_DIR}/extern/meshoptimizer/build/libmeshoptimizer.a"
+	)
+
 target_compile_features(myosotis PRIVATE cxx_std_17)
 target_compile_options(myosotis PRIVATE -Wall -Wextra)
+target_link_libraries(myosotis miniply)
+target_link_libraries(myosotis imgui_glfw_opengl3)
 target_link_libraries(myosotis OpenGL)
 target_link_libraries(myosotis glfw)
 target_link_libraries(myosotis ${CMAKE_DL_LIBS})
-target_link_libraries(myosotis /media/code/Didier/Myosotis/extern/meshoptimizer/build/libmeshoptimizer.a)
+target_link_libraries(myosotis meshoptimizer)
 

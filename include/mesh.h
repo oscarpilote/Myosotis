@@ -14,6 +14,7 @@ namespace VertexAttrib {
 		NML = 1 << 1,
 		UV0 = 1 << 2,
 		UV1 = 1 << 3,
+		PAR = 1 << 4,
 	};
 };
 
@@ -28,10 +29,11 @@ struct MeshData {
 	Vec3 *positions       = nullptr;
 	Vec3 *normals         = nullptr;
 	Vec2 *uv[MAX_UV_MAPS] = {nullptr};
+	uint32_t *parents     = nullptr;
 
 	void clear();
-	void reserve_indices (size_t count, bool shrink = false);
-	void reserve_vertices(size_t count, bool shrink = false);
+	void reserve_indices (size_t num, bool shrink = false);
+	void reserve_vertices(size_t num, bool shrink = false);
 };
 
 struct Mesh {
