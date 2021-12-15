@@ -1,19 +1,23 @@
+#include "mesh_utils.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
 
-#include "mesh_utils.h"
+#include "sys_utils.h"
 #include "vec3.h"
-#include "bbox.h"
+#include "aabb.h"
 #include "mesh.h"
 #include "array.h"
 #include "geometry.h"
 #include "mesh_remap.h"
 
-Bbox compute_mesh_bounds(const Vec3* positions, size_t vertex_count)
+static Aabb compute_bounds(const Vec3* positions, size_t vertex_count)
 {
+	assert(positions);
+
 	Vec3 min = positions[0];
 	Vec3 max = positions[0];
 	
@@ -31,21 +35,37 @@ Bbox compute_mesh_bounds(const Vec3* positions, size_t vertex_count)
 	return {min, max}; 
 }
 
-Bbox compute_mesh_bounds(const Mesh& mesh, const MeshData& data)
+Aabb compute_patch_bounds(const MeshPatch& patch, const MeshData& data)
 {
-	const Vec3 *positions = data.positions + mesh.vertex_offset;
-	size_t vertex_count = mesh.vertex_count;
+	const Vec3 *positions = data.positions + patch.vertex_offset;
+	size_t vertex_count = patch.vertex_count;
 
-	return (compute_mesh_bounds(positions, vertex_count));
+	return (compute_bounds(positions, vertex_count));
 }
 
-void compute_mesh_normals(const Mesh& mesh, MeshData& data)
+Aabb compute_mesh_bounds(const Mesh& mesh)
 {
+	assert(mesh.num_patches);
+
+	Aabb res = compute_patch_bounds(mesh.patches[0], mesh.data);
+
+	for (size_t i = 1; i < mesh.num_patches; ++i)
+	{
+		res |= compute_patch_bounds(mesh.patches[i], mesh.data);
+	}
+
+	return (res);
+}
+
+
+void compute_mesh_normals(Mesh& mesh)
+{
+	MeshData& data = mesh.data;
+
 	if (!(data.vtx_attribs & VertexAttrib::NML))
 	{
 		
-		void *normals = malloc(data.vtx_capacity * sizeof(Vec3));
-		data.normals = static_cast<Vec3*>(normals);
+		MALLOC_NUM(data.normals, data.vtx_capacity);
 		data.vtx_attribs |= VertexAttrib::NML;
 
 	}
@@ -169,21 +189,29 @@ void copy_vertices(MeshData& dst, size_t dst_off, const MeshData& src,
 	}
 }
 
-void group_meshes(const Mesh* meshes, size_t nmesh, const MeshData& src, 
-		  Mesh& group, MeshData& dst)
+void group_mesh_patches(const Mesh& src_mesh, const uint32_t* patch_indices, 
+			uint32_t num_patches, Mesh& dst_mesh)
 {
-	dst.vtx_attribs = src.vtx_attribs;
+
+	dst_mesh.clear();
+	dst_mesh.reserve_patches(1);	
 	
+	MeshData& dst = dst_mesh.data;
+	const MeshData& src = src_mesh.data;
+	dst.vtx_attribs = src.vtx_attribs;
+	MeshPatch& group = dst_mesh.patches[0];
+
 	group.index_offset  = 0;
 	group.vertex_offset = 0;
 
 	size_t total_indices  = 0;
 	size_t total_vertices = 0;
 	
-	for (size_t i = 0; i < nmesh; ++i)
+	for (size_t i = 0; i < num_patches; ++i)
 	{
-		total_indices  += meshes[i].index_count;
-		total_vertices += meshes[i].vertex_count;
+		const MeshPatch &patch = src_mesh.patches[patch_indices[i]];
+		total_indices  += patch.index_count;
+		total_vertices += patch.vertex_count;
 	}
 	
 	dst.reserve_indices(total_indices);
@@ -194,24 +222,26 @@ void group_meshes(const Mesh* meshes, size_t nmesh, const MeshData& src,
 
 	total_indices = 0;
 	total_vertices = 0;
-	for (size_t i = 0; i < nmesh; ++i)
+	for (size_t i = 0; i < num_patches; ++i)
 	{
+		const MeshPatch &patch = src_mesh.patches[patch_indices[i]];
+
 		size_t dst_off, src_off, idx_num, vtx_num, vtx_off;
 
-		src_off = meshes[i].index_offset;
+		src_off = patch.index_offset;
 		dst_off = total_indices;
-		idx_num = meshes[i].index_count;
+		idx_num = patch.index_count;
 		vtx_off = total_vertices;
 		copy_indices(dst, dst_off, src, src_off, idx_num, vtx_off);
 
-		src_off = meshes[i].vertex_offset;
+		src_off = patch.vertex_offset;
 		dst_off = total_vertices;
-		vtx_num = meshes[i].vertex_count;
+		vtx_num = patch.vertex_count;
 		vtx_off = total_vertices;
 		copy_vertices(dst, dst_off, src, src_off, vtx_num, vtx_off);
 		
-		total_indices  += meshes[i].index_count;
-		total_vertices += meshes[i].vertex_count;
+		total_indices  += patch.index_count;
+		total_vertices += patch.vertex_count;
 	}
 }
 

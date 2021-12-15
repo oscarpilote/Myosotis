@@ -9,7 +9,6 @@
 
 namespace VertexAttrib {
 	enum {
-		IDX = 0,
 		POS = 1 << 0,
 		NML = 1 << 1,
 		UV0 = 1 << 2,
@@ -36,11 +35,19 @@ struct MeshData {
 	void reserve_vertices(size_t num, bool shrink = false);
 };
 
-struct Mesh {
+struct MeshPatch {
 	uint32_t index_offset;
 	uint32_t index_count;
 	uint32_t vertex_offset;
 	uint32_t vertex_count;
+};
+
+struct Mesh {
+	MeshData  data;
+	MeshPatch *patches	= nullptr;
+	uint32_t  num_patches	= 0;
+	void clear();
+	void reserve_patches(size_t num, bool shrink = false);
 };
 
 

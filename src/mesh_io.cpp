@@ -49,11 +49,8 @@ bool ObjVertexHasher::is_equal(fastObjIndex key1, fastObjIndex key2) const
 	return (res);	
 }	
 
-static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
+static int load_obj(const fastObjMesh& obj, Mesh& mesh)
 {
-	data.clear();
-	data.vtx_attribs = VertexAttrib::POS;
-
 	size_t obj_vertex_count = 0;
 	size_t index_count = 0;
 
@@ -63,20 +60,23 @@ static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 		index_count += 3 * (obj.face_vertices[i] - 2);
 	}
 
-	data.reserve_indices(index_count);
 
 	bool has_normals = false;
 	bool has_uv = false;
+	uint32_t vtx_attribs = VertexAttrib::POS;
 	for (size_t i = 0; i < obj_vertex_count; ++i)
 	{
 		has_normals |= (obj.indices[i].n != 0);
 		has_uv      |= (obj.indices[i].t != 0);
 	}
-	data.vtx_attribs |= has_normals ? VertexAttrib::NML : 0;
-	data.vtx_attribs |= has_uv ? VertexAttrib::UV0 : 0;
+	vtx_attribs |= has_normals ? VertexAttrib::NML : 0;
+	vtx_attribs |= has_uv      ? VertexAttrib::UV0 : 0;
 
-	size_t vertex_count_guess = index_count / 6;
-	vertex_count_guess += vertex_count_guess / 2;
+	MeshData& data = mesh.data;
+	data.clear();
+	data.reserve_indices(index_count);
+	size_t vertex_count_guess = index_count / 4; /* optimal should be /6 */
+	data.vtx_attribs = vtx_attribs;
 	data.reserve_vertices(vertex_count_guess);
 
 	/* Discover vertices and encode indices */
@@ -105,53 +105,55 @@ static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 			fastObjIndex pnt = obj.indices[idx_offset + j];
 
 			uint32_t *p = vertices.get_or_set(pnt, vertex_count);
-			if (!p)
+			if (p)
 			{
-				data.indices[idx] = vertex_count;
-				
-				/* Copy vertex */
-				if (vertex_count >= data.vtx_capacity)
-				{
-					size_t new_cap = data.vtx_capacity +
-						data.vtx_capacity / 2;
-					#ifdef DEBUG
-					printf("Reserve %zu vertices\n", 
-							new_cap);
-					#endif
-					data.reserve_vertices(new_cap);
-				}
-				void *dst;
-				void *src;
-				dst = data.positions + vertex_count;
-				src = obj.positions + 3 * pnt.p;
-				memmove(dst, src, 3 * sizeof(float));
-				if (has_normals)
-				{
-					dst = data.normals + vertex_count;
-					src = obj.normals + 3 * pnt.n;
-					memmove(dst, src, 3 * sizeof(float));
-				}
-				if (has_uv)
-				{
-					dst = data.uv[0] + vertex_count;
-					src = obj.texcoords + 2 * pnt.t;
-					memmove(dst, src, 2 * sizeof(float));
-				}
-				vertex_count++; 
-			}
-			else
-			{
+				/* Existing vertex */
 				data.indices[idx] = *p;
+				idx++;
+				continue;
 			}
+			
+			/* New vertex */
+			data.indices[idx] = vertex_count;
+			if (vertex_count >= data.vtx_capacity)
+			{
+				size_t new_cap = data.vtx_capacity +
+					data.vtx_capacity / 2;
+				#ifdef DEBUG
+				printf("Reserve %zu vertices\n", 
+						new_cap);
+				#endif
+				data.reserve_vertices(new_cap);
+			}
+			void *dst;
+			void *src;
+			dst = data.positions + vertex_count;
+			src = obj.positions + 3 * pnt.p;
+			memmove(dst, src, 3 * sizeof(float));
+			if (has_normals)
+			{
+				dst = data.normals + vertex_count;
+				src = obj.normals + 3 * pnt.n;
+				memmove(dst, src, 3 * sizeof(float));
+			}
+			if (has_uv)
+			{
+				dst = data.uv[0] + vertex_count;
+				src = obj.texcoords + 2 * pnt.t;
+				memmove(dst, src, 2 * sizeof(float));
+			}
+			vertex_count++; 
 			idx++;
 		}
 		idx_offset += obj.face_vertices[i];
 	}
 
-	mesh.index_offset  = 0;
-	mesh.vertex_offset = 0;
-	mesh.index_count  = index_count;
-	mesh.vertex_count = vertex_count;
+	mesh.reserve_patches(1);
+	MeshPatch& patch = mesh.patches[0];
+	patch.index_offset  = 0;
+	patch.vertex_offset = 0;
+	patch.index_count  = index_count;
+	patch.vertex_count = vertex_count;
 
 	bool shrink = true;
 	data.reserve_vertices(vertex_count, shrink);
@@ -159,21 +161,21 @@ static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 	return (EXIT_SUCCESS);
 }
 
-int load_obj(const char *filename, MeshData& data, Mesh& mesh)
+int load_obj(const char *filename, Mesh& mesh)
 {
 	fastObjMesh *obj = fast_obj_read(filename);
 	if (obj == nullptr)
 	{
 		return (EXIT_FAILURE);
 	}
-	int res = load_obj(*obj, data, mesh);
+	int res = load_obj(*obj, mesh);
 	fast_obj_destroy(obj);
 
 	return (res);
 }
 
 
-int load_ply(const char* filename, MeshData &data, Mesh &mesh)
+int load_ply(const char* filename, Mesh &mesh)
 {
 	using namespace miniply;
 	PLYReader reader(filename);
@@ -181,7 +183,13 @@ int load_ply(const char* filename, MeshData &data, Mesh &mesh)
 	{
 		return (EXIT_FAILURE);
 	}
-	
+
+	MeshData& data = mesh.data;
+	data.clear();
+	mesh.reserve_patches(1);
+	MeshPatch& patch = mesh.patches[0];
+
+
 	bool got_verts = false;
 	bool got_faces = false;
 
@@ -193,8 +201,8 @@ int load_ply(const char* filename, MeshData &data, Mesh &mesh)
 			reader.load_element();
 			reader.find_pos(pos_idx);
 			uint32_t vertex_count = reader.num_rows();
-			mesh.vertex_offset = 0;
-			mesh.vertex_count  = vertex_count;
+			patch.vertex_offset = 0;
+			patch.vertex_count  = vertex_count;
 
 			uint32_t nml_idx[3];
 			if (reader.find_normal(nml_idx)) 
@@ -244,7 +252,7 @@ int load_ply(const char* filename, MeshData &data, Mesh &mesh)
 				data.reserve_indices(index_count);
 				reader.extract_triangles(idx[0],
 					(const float *)data.positions,
-					mesh.vertex_count, 
+					patch.vertex_count, 
 					PLYPropertyType::Int,
 					data.indices);
 			}
@@ -256,8 +264,8 @@ int load_ply(const char* filename, MeshData &data, Mesh &mesh)
 						PLYPropertyType::Int,
 						data.indices);
 			}
-			mesh.index_offset = 0;
-			mesh.index_count  = index_count;
+			patch.index_offset = 0;
+			patch.index_count  = index_count;
 			got_faces = true;
 		}
 		if (got_verts && got_faces) 
@@ -269,6 +277,7 @@ int load_ply(const char* filename, MeshData &data, Mesh &mesh)
 
 	if (!got_verts || !got_faces) 
 	{
+		mesh.clear();
 		return (EXIT_FAILURE);
 	}
 	
