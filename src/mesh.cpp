@@ -1,22 +1,20 @@
-#include "mesh.h"
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
 
+#include "mesh.h"
 #include "vec3.h"
 #include "vec2.h"
-#include "sys_utils.h"
 
 void MeshData::clear()
 {
-	MEMFREE(indices);
+	free(indices);
 	idx_capacity = 0;
-	MEMFREE(positions);
-	MEMFREE(normals);
-	MEMFREE(uv[0]);
-	MEMFREE(uv[1]);
-	MEMFREE(parents);
+	free(positions);
+	free(normals);
+	free(uv[0]);
+	free(uv[1]);
+	free(parents);
 	vtx_capacity = 0;
 }
 
@@ -29,7 +27,7 @@ void MeshData::reserve_indices(size_t num, bool shrink)
 		return;
 	}
 	
-	REALLOC_NUM(indices, num);
+	indices = (uint32_t *)realloc(indices, num * sizeof(uint32_t));
 	idx_capacity = num;
 }
 
@@ -44,46 +42,29 @@ void MeshData::reserve_vertices(size_t num, bool shrink)
 
 	if (true)
 	{
-		REALLOC_NUM(positions, num);
+		positions = (Vec3 *)realloc(positions, num * sizeof(Vec3));
 	}
 	
 	if (vtx_attribs & VertexAttrib::NML)
 	{
-		REALLOC_NUM(normals, num);
+		normals = (Vec3 *)realloc(normals, num * sizeof(Vec3));
 	}
 	
 	if (vtx_attribs & VertexAttrib::UV0)
 	{
-		REALLOC_NUM(uv[0], num);
+		uv[0] = (Vec2 *)realloc(uv[0], num * sizeof(Vec2));
 	}
 	
 	if (vtx_attribs & VertexAttrib::UV1)
 	{
-		REALLOC_NUM(uv[1], num);
+		uv[1] = (Vec2 *)realloc(uv[1], num * sizeof(Vec2));
 	}
 	
 	if (vtx_attribs & VertexAttrib::PAR)
 	{
-		REALLOC_NUM(parents, num);
+		parents = (uint32_t *)realloc(parents, num * sizeof(uint32_t));
 	}
 	
 	vtx_capacity = num;
-}
-
-void Mesh::clear()
-{
-	data.clear();
-	MEMFREE(patches);
-	num_patches = 0;
-}
-
-void Mesh::reserve_patches(size_t num, bool shrink)
-{
-	assert(num > 0);
-
-	if ((num > num_patches) || (num < num_patches && shrink))
-	{
-		REALLOC_NUM(patches, num);
-	}
 }
 
