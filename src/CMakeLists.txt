@@ -11,7 +11,7 @@ add_executable(myosotis
 	mesh_io.cpp
 	mesh_grid.cpp
 	mesh_utils.cpp
-	mesh_remap.cpp
+	position_remap.cpp
 	mesh.cpp
 	chrono.cpp
 	shaders.cpp

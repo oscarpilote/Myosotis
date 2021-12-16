@@ -11,7 +11,7 @@
 #include "mesh.h"
 #include "array.h"
 #include "geometry.h"
-#include "mesh_remap.h"
+#include "position_remap.h"
 
 Aabb compute_mesh_bounds(const Vec3* positions, size_t vertex_count)
 {
@@ -51,17 +51,20 @@ void compute_mesh_normals(const Mesh& mesh, MeshData& data)
 
 	}
 
-	TArray<uint32_t> remap(mesh.vertex_count);
-	build_position_remap(mesh, data, &remap[0]);
 
 	uint32_t *indices = data.indices + mesh.index_offset;
 	const Vec3* positions = data.positions + mesh.vertex_offset; 
 	Vec3* normals = data.normals + mesh.vertex_offset; 
+
 	/* Init normals to zero */
 	for (size_t i = 0; i < mesh.vertex_count; ++i)
 	{
 		normals[i] = Vec3::Zero;
 	}
+	
+	TArray<uint32_t> remap(mesh.vertex_count);
+	build_position_remap(positions, mesh.vertex_count, &remap[0]);
+
 	for (size_t i = 0; i < mesh.index_count; i+=3)
 	{
 		const Vec3 v1 = positions[indices[i + 0]];
