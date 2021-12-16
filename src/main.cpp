@@ -16,6 +16,7 @@
 #include <GLFW/glfw3.h>
 
 #include "version.h"
+#include "aabb.h"
 #include "transform.h"
 #include "viewer.h"
 #include "mesh_io.h"
@@ -24,7 +25,6 @@
 #include "chrono.h"
 #include "shaders.h"
 #include "myosotis.h"
-
 
 void syntax(char *argv[])
 {
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 	}
 
 	timer_start();
-	Bbox bbox = compute_mesh_bounds(mesh, data);
+	Aabb bbox = compute_mesh_bounds(mesh, data);
 	Vec3 model_center = (bbox.min + bbox.max) * 0.5f;
 	Vec3 model_extent = (bbox.max - bbox.min);
 	float model_size = max(model_extent);

@@ -21,6 +21,38 @@
 	#define ASSUME_ALIGNED(var, n)
 #endif
 
+#define MALLOC_NUM(ptr, num) do {\
+	ptr = VOIDSTARCAST(ptr)malloc((num) * sizeof (*ptr));\
+	if (UNLIKELY(num != 0 && ptr == NULL)) abort();\
+	} while(0)
+
+#define MALLOC_SIZ(ptr, size) do {\
+	ptr = VOIDSTARCAST(ptr)malloc((size));\
+	if (UNLIKELY(size != 0 && ptr == NULL)) abort();\
+	} while(0)
+
+#define CALLOC_NUM(ptr, num) do {\
+	ptr = VOIDSTARCAST(ptr)calloc((num), sizeof (*ptr));\
+	if (UNLIKELY(num != 0 && ptr == NULL)) abort();\
+	} while(0)
+
+#define CALLOC_SIZ(ptr, size) do {\
+	ptr = VOIDSTARCAST(ptr)calloc((size) / sizeof (*ptr), sizeof (*ptr));\
+	if (UNLIKELY(size != 0 && ptr == NULL)) abort();\
+	} while(0)
+
+#define REALLOC_NUM(ptr, num) do {\
+	ptr = VOIDSTARCAST(ptr)realloc(ptr, (num) * sizeof (*ptr));\
+	if (UNLIKELY(num != 0 && ptr == NULL)) abort();\
+	} while(0)
+
+#define REALLOC_SIZ(ptr, size) do {\
+	ptr = VOIDSTARCAST(ptr)realloc(ptr, (size));\
+	if (UNLIKELY(size != 0 && ptr == NULL)) abort();\
+	} while(0)
+
+#define MEMFREE(ptr) do {free(ptr); ptr = NULL;} while (0)
+
 // Remove old 16bit Windows.h macros near and far
 #ifdef far
 #undef far

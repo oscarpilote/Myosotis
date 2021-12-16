@@ -1,18 +1,19 @@
+#include "mesh_utils.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
 
-#include "mesh_utils.h"
 #include "vec3.h"
-#include "bbox.h"
+#include "aabb.h"
 #include "mesh.h"
 #include "array.h"
 #include "geometry.h"
 #include "mesh_remap.h"
 
-Bbox compute_mesh_bounds(const Vec3* positions, size_t vertex_count)
+Aabb compute_mesh_bounds(const Vec3* positions, size_t vertex_count)
 {
 	Vec3 min = positions[0];
 	Vec3 max = positions[0];
@@ -31,7 +32,7 @@ Bbox compute_mesh_bounds(const Vec3* positions, size_t vertex_count)
 	return {min, max}; 
 }
 
-Bbox compute_mesh_bounds(const Mesh& mesh, const MeshData& data)
+Aabb compute_mesh_bounds(const Mesh& mesh, const MeshData& data)
 {
 	const Vec3 *positions = data.positions + mesh.vertex_offset;
 	size_t vertex_count = mesh.vertex_count;
@@ -169,7 +170,7 @@ void copy_vertices(MeshData& dst, size_t dst_off, const MeshData& src,
 	}
 }
 
-void group_meshes(const Mesh* meshes, size_t nmesh, const MeshData& src, 
+void concat_meshes(const Mesh* meshes, size_t num_mesh, const MeshData& src, 
 		  Mesh& group, MeshData& dst)
 {
 	dst.vtx_attribs = src.vtx_attribs;
@@ -180,7 +181,7 @@ void group_meshes(const Mesh* meshes, size_t nmesh, const MeshData& src,
 	size_t total_indices  = 0;
 	size_t total_vertices = 0;
 	
-	for (size_t i = 0; i < nmesh; ++i)
+	for (size_t i = 0; i < num_mesh; ++i)
 	{
 		total_indices  += meshes[i].index_count;
 		total_vertices += meshes[i].vertex_count;
@@ -194,7 +195,7 @@ void group_meshes(const Mesh* meshes, size_t nmesh, const MeshData& src,
 
 	total_indices = 0;
 	total_vertices = 0;
-	for (size_t i = 0; i < nmesh; ++i)
+	for (size_t i = 0; i < num_mesh; ++i)
 	{
 		size_t dst_off, src_off, idx_num, vtx_num, vtx_off;
 
