@@ -11,17 +11,20 @@
 #include "mesh.h"
 #include "mesh_utils.h"
 
-static CellCoord point_to_cell_coord(const Vec3& p, const Grid& grid)
+inline
+
+static
+CellCoord point_to_cell_coord(const Vec3& p, const Grid& grid, uint8_t lod)
 {
 	CellCoord coord;
 
-	float invstep = 1.f / grid.step; 
+	float invstep = 1.f / ((1 << lod) * grid.step); 
 	Vec3 float_coord = (p - grid.base) * invstep;
 	
+	coord.lod = lod;
 	coord.x = floor(float_coord.x);
 	coord.y = floor(float_coord.y);
 	coord.z = floor(float_coord.z);
-	coord.unused = 0;
 	
 	return coord;  
 }
@@ -52,7 +55,7 @@ void split_mesh_with_grid(
 
 		const Vec3 bary = (v1 + v2 + v3) * (1.f / 3.f);
 		
-		const CellCoord cell_coord = point_to_cell_coord(bary, grid);
+		const CellCoord cell_coord = point_to_cell_coord(bary, grid, 0);
 		
 		uint32_t cell_idx;
 		uint32_t *p = coord_to_cell_idx.get(cell_coord);
