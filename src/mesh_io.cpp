@@ -52,7 +52,7 @@ bool ObjVertexHasher::is_equal(fastObjIndex key1, fastObjIndex key2) const
 static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 {
 	data.clear();
-	data.vtx_attribs = VertexAttrib::POS;
+	data.vtx_attr = VtxAttr::P;
 
 	size_t obj_vertex_count = 0;
 	size_t index_count = 0;
@@ -72,8 +72,8 @@ static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 		has_normals |= (obj.indices[i].n != 0);
 		has_uv      |= (obj.indices[i].t != 0);
 	}
-	data.vtx_attribs |= has_normals ? VertexAttrib::NML : 0;
-	data.vtx_attribs |= has_uv ? VertexAttrib::UV0 : 0;
+	data.vtx_attr |= has_normals ? VtxAttr::NML : 0;
+	data.vtx_attr |= has_uv ? VtxAttr::UV0 : 0;
 
 	size_t vertex_count_guess = index_count / 6;
 	vertex_count_guess += vertex_count_guess / 2;
@@ -199,13 +199,13 @@ int load_ply(const char* filename, MeshData &data, Mesh &mesh)
 			uint32_t nml_idx[3];
 			if (reader.find_normal(nml_idx)) 
 			{
-				data.vtx_attribs |= VertexAttrib::NML;
+				data.vtx_attr |= VtxAttr::NML;
 			}
 
 			uint32_t uv_idx[2];
 			if (reader.find_texcoord(uv_idx)) 
 			{
-				data.vtx_attribs |= VertexAttrib::UV0;
+				data.vtx_attr |= VtxAttr::UV0;
 			}
     
 			data.reserve_vertices(vertex_count);
@@ -213,12 +213,12 @@ int load_ply(const char* filename, MeshData &data, Mesh &mesh)
 			reader.extract_properties(pos_idx, 3,
 					PLYPropertyType::Float,
 					data.positions);
-			if (data.vtx_attribs & VertexAttrib::NML)
+			if (data.vtx_attr & VtxAttr::NML)
 			{
 				reader.extract_properties(nml_idx, 3, 
 				     PLYPropertyType::Float, data.normals);
 			}
-			if (data.vtx_attribs & VertexAttrib::UV0)
+			if (data.vtx_attr & VtxAttr::UV0)
 			{
 				reader.extract_properties(uv_idx, 2, 
 				     PLYPropertyType::Float, data.uv[0]);

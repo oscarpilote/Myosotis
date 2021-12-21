@@ -78,12 +78,12 @@ void meshopt_optimize(MeshData& data, const Mesh& mesh)
 	meshopt_optimizeVertexFetchRemap(&remap[0], idx, nidx, nvtx);
 	meshopt_remapIndexBuffer(idx, idx, nidx, &remap[0]);
 	meshopt_remapVertexBuffer(pos, pos, nvtx, sizeof(Vec3), &remap[0]);
-	if (data.vtx_attribs & VertexAttrib::NML)
+	if (data.vtx_attr & VtxAttr::NML)
 	{
 		meshopt_remapVertexBuffer(nml, nml, nvtx, sizeof(Vec3), 
 					  &remap[0]);
 	}
-	if (data.vtx_attribs & VertexAttrib::UV0)
+	if (data.vtx_attr & VtxAttr::UV0)
 	{
 		meshopt_remapVertexBuffer(uv0, uv0, nvtx, sizeof(Vec2),
 					  &remap[0]);
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 		meshopt_statistics("Optimized", data, mesh);
 	}
 
-	if (!(data.vtx_attribs & VertexAttrib::NML))
+	if (!(data.vtx_attr & VtxAttr::NML))
 	{
 		timer_start();
 		printf("Computing normals.\n");

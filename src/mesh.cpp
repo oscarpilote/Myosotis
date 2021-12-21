@@ -47,22 +47,22 @@ void MeshData::reserve_vertices(size_t num, bool shrink)
 		REALLOC_NUM(positions, num);
 	}
 	
-	if (vtx_attribs & VertexAttrib::NML)
+	if (vtx_attr & VtxAttr::NML)
 	{
 		REALLOC_NUM(normals, num);
 	}
 	
-	if (vtx_attribs & VertexAttrib::UV0)
+	if (vtx_attr & VtxAttr::UV0)
 	{
 		REALLOC_NUM(uv[0], num);
 	}
 	
-	if (vtx_attribs & VertexAttrib::UV1)
+	if (vtx_attr & VtxAttr::UV1)
 	{
 		REALLOC_NUM(uv[1], num);
 	}
 	
-	if (vtx_attribs & VertexAttrib::PAR)
+	if (vtx_attr & VtxAttr::PAR)
 	{
 		REALLOC_NUM(parents, num);
 	}

@@ -57,5 +57,5 @@ void split_mesh_with_grid(
 		const Mesh& mesh,
 		MeshData& out,
 		TArray<Mesh>& cells,
-		CellTable& coord_to_cell_idx);
+		CellTable& cell_table);
 

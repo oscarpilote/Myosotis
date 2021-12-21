@@ -71,17 +71,13 @@ static inline size_t hash_lookup(K *keys, size_t buckets, H hasher, K key)
 
 template<typename K, typename V, typename H>
 HashTable<K, V, H>::HashTable(size_t expected_keys, H hasher)
+	: _size(0), _buckets(1), hasher(hasher) 
 {
-	_size = 0;
-	
-	_buckets = 1;
 	while (_buckets < (3 * expected_keys / 2))
 	{
 		_buckets *= 2;
 	}
 	
-	this->hasher = hasher;
-
 	keys = static_cast<K*>(malloc(_buckets * sizeof(K)));
 	vals = static_cast<V*>(malloc(_buckets * sizeof(V)));
 	assert(keys != nullptr && vals != nullptr);

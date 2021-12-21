@@ -7,20 +7,24 @@
 
 #define MAX_UV_MAPS 2
 
-namespace VertexAttrib {
+namespace VtxAttr {
 	enum {
-		IDX = 0,
-		POS = 1 << 0,
-		NML = 1 << 1,
-		UV0 = 1 << 2,
-		UV1 = 1 << 3,
-		PAR = 1 << 4,
+		POS = 0,
+		NML = 1 << 0,
+		UV0 = 1 << 1,
+		UV1 = 1 << 2,
+		PAR = 1 << 3,
+		/* Some common combo */
+		P   = POS,
+		PN  = POS | NML,
+		PNT = POS | NML | UV0,
+		PT  = POS | UV0,
 	};
 };
 
 struct MeshData {
 	
-	uint32_t vtx_attribs  = VertexAttrib::POS;
+	uint32_t vtx_attr     = 0;
 
 	size_t idx_capacity   = 0;
 	uint32_t *indices     = nullptr;

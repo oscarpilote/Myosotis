@@ -35,9 +35,9 @@ void split_mesh_with_grid(
 		const Mesh& mesh,
 		MeshData& dst,
 		TArray<Mesh>& cells,
-		CellTable& coord_to_cell_idx)
+		CellTable& cell_table)
 {
-	dst.vtx_attribs = src.vtx_attribs;
+	dst.vtx_attr = src.vtx_attr;
 	
 	/* Loop over triangles and fill triangle to cell table. */
 	
@@ -58,11 +58,11 @@ void split_mesh_with_grid(
 		const CellCoord cell_coord = point_to_cell_coord(bary, grid, 0);
 		
 		uint32_t cell_idx;
-		uint32_t *p = coord_to_cell_idx.get(cell_coord);
+		uint32_t *p = cell_table.get(cell_coord);
 		if UNLIKELY(!p)
 		{
-			cell_idx = coord_to_cell_idx.size();
-			coord_to_cell_idx.set_at(cell_coord, cell_idx);
+			cell_idx = cell_table.size();
+			cell_table.set_at(cell_coord, cell_idx);
 			cells.push_back(Mesh{0, 0, 0, 0});
 		}
 		else
@@ -168,4 +168,3 @@ void split_mesh_with_grid(
 		idx_remap.clear();
 	}
 }
-

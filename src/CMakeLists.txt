@@ -11,7 +11,7 @@ add_executable(myosotis
 	mesh_io.cpp
 	mesh_grid.cpp
 	mesh_utils.cpp
-	position_remap.cpp
+	vertex_remap.cpp
 	mesh.cpp
 	chrono.cpp
 	shaders.cpp
@@ -37,7 +37,7 @@ set_target_properties(meshoptimizer PROPERTIES
 	"${CMAKE_SOURCE_DIR}/extern/meshoptimizer/build/libmeshoptimizer.a"
 	)
 
-target_compile_features(myosotis PRIVATE cxx_std_17)
+target_compile_features(myosotis PRIVATE cxx_std_20)
 target_compile_options(myosotis PRIVATE -Wall -Wextra)
 target_link_libraries(myosotis miniply)
 target_link_libraries(myosotis imgui_glfw_opengl3)
