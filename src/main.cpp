@@ -31,7 +31,7 @@ void syntax(char *argv[])
 	printf("Syntax : %s mesh_file_name [max_level]\n", argv[0]);
 }
 
-void meshopt_statistics(const char *name, const MeshData& data, 
+void meshopt_statistics(const char *name, const MBuf& data, 
 			const Mesh& mesh)
 {
 	uint32_t *idx = data.indices + mesh.index_offset;
@@ -59,7 +59,7 @@ void meshopt_statistics(const char *name, const MeshData& data,
 	       os.overdraw);
 }
 
-void meshopt_optimize(MeshData& data, const Mesh& mesh)
+void meshopt_optimize(MBuf& data, const Mesh& mesh)
 {
 	uint32_t *idx = data.indices + mesh.index_offset;
 	float *pos = (float*)(data.positions + mesh.vertex_offset);
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 	
 	/* Load and process mesh */
 	timer_start();
-	MeshData data;
+	MBuf data;
 	Mesh mesh;
 
 	{
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 		int level = atoi(argv[3]);
 		float cube_size = model_size;  
 		Grid grid = {bbox.min, cube_size / (1 << level)};
-		MeshData data2;
+		MBuf data2;
 		TArray<Mesh> cells;
 		CellTable coord_to_cell_idx(1 << (2 * level + 3));
 		split_mesh_with_grid(grid, data, mesh, data2, cells, 

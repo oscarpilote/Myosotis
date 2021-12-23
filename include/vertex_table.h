@@ -9,7 +9,7 @@
 /* I. Non templated version (uses branching for vertex attribs) */
 
 struct VertexHasher {
-	const MeshData& data;
+	const MBuf& data;
 	uint32_t vtx_attr;
 	static constexpr uint32_t empty_key = ~static_cast<uint32_t>(0);
 	size_t   hash(uint32_t key) const;
@@ -20,12 +20,13 @@ struct VertexHasher {
 using _VertexTable = HashTable<uint32_t, uint32_t, VertexHasher>;
 
 struct VertexTable : public _VertexTable {
-	VertexTable(size_t expected_nkeys, const MeshData& data, 
+	VertexTable(size_t expected_nkeys, const MBuf& data, 
 		    uint32_t vtx_attr);
+	const MBuf& get_mesh_data() {return hasher.data;};
 };
 
 inline
-VertexTable::VertexTable(size_t expected_nkeys, const MeshData& data, 
+VertexTable::VertexTable(size_t expected_nkeys, const MBuf& data, 
 			 uint32_t vtx_attr)
 	: _VertexTable::HashTable(expected_nkeys, {data, vtx_attr}) 
 {
@@ -84,7 +85,7 @@ VertexHasher::is_equal(uint32_t key1, uint32_t key2) const
 
 template <uint32_t vtx_attr>
 struct TVertexHasher {
-	const MeshData& data;
+	const MBuf& data;
 	static constexpr uint32_t empty_key = ~static_cast<uint32_t>(0);
 	size_t   hash(uint32_t key) const;
 	bool is_empty(uint32_t key) const {return (key == empty_key);}
@@ -96,12 +97,12 @@ using _TVertexTable = HashTable<uint32_t, uint32_t, TVertexHasher<vtx_attr>>;
 
 template <uint32_t vtx_attr>
 struct TVertexTable : public _TVertexTable<vtx_attr> {
-	TVertexTable(size_t init_num, const MeshData& data); 
+	TVertexTable(size_t init_num, const MBuf& data); 
 };
 	
 template <uint32_t vtx_attr>
 inline 
-TVertexTable<vtx_attr>::TVertexTable(size_t expected_nkeys, const MeshData& data)
+TVertexTable<vtx_attr>::TVertexTable(size_t expected_nkeys, const MBuf& data)
 	: _TVertexTable<vtx_attr>::HashTable(expected_nkeys, {data})
 {
 }

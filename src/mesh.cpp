@@ -8,7 +8,7 @@
 #include "vec2.h"
 #include "sys_utils.h"
 
-void MeshData::clear()
+void MBuf::clear()
 {
 	MEMFREE(indices);
 	idx_capacity = 0;
@@ -20,7 +20,7 @@ void MeshData::clear()
 	vtx_capacity = 0;
 }
 
-void MeshData::reserve_indices(size_t num, bool shrink)
+void MBuf::reserve_indices(size_t num, bool shrink)
 {
 	assert(num > 0);
 
@@ -33,7 +33,7 @@ void MeshData::reserve_indices(size_t num, bool shrink)
 	idx_capacity = num;
 }
 
-void MeshData::reserve_vertices(size_t num, bool shrink)
+void MBuf::reserve_vertices(size_t num, bool shrink)
 {
 	assert(num > 0);
 

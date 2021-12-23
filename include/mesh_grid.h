@@ -53,9 +53,9 @@ inline bool CellCoordHasher::is_equal(CellCoord c1, CellCoord c2) const
 
 void split_mesh_with_grid(
 		const Grid grid,
-		const MeshData& in,
+		const MBuf& in,
 		const Mesh& mesh,
-		MeshData& out,
+		MBuf& out,
 		TArray<Mesh>& cells,
 		CellTable& cell_table);
 

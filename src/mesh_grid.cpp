@@ -31,9 +31,9 @@ CellCoord point_to_cell_coord(const Vec3& p, const Grid& grid, uint8_t lod)
 
 void split_mesh_with_grid(
 		const Grid grid,
-		const MeshData& src,
+		const MBuf& src,
 		const Mesh& mesh,
-		MeshData& dst,
+		MBuf& dst,
 		TArray<Mesh>& cells,
 		CellTable& cell_table)
 {

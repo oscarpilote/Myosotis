@@ -32,7 +32,7 @@ public:
 	V* get_or_set(K key, V alt_val);
 	void set_at(K key, V val);
 	float load_factor() const;
-private:
+protected:
 	/* Members */
 	size_t _size;
 	size_t _buckets;

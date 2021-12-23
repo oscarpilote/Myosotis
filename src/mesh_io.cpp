@@ -49,7 +49,7 @@ bool ObjVertexHasher::is_equal(fastObjIndex key1, fastObjIndex key2) const
 	return (res);	
 }	
 
-static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
+static int load_obj(const fastObjMesh& obj, MBuf& data, Mesh& mesh)
 {
 	data.clear();
 	data.vtx_attr = VtxAttr::P;
@@ -159,7 +159,7 @@ static int load_obj(const fastObjMesh& obj, MeshData& data, Mesh& mesh)
 	return (EXIT_SUCCESS);
 }
 
-int load_obj(const char *filename, MeshData& data, Mesh& mesh)
+int load_obj(const char *filename, MBuf& data, Mesh& mesh)
 {
 	fastObjMesh *obj = fast_obj_read(filename);
 	if (obj == nullptr)
@@ -173,7 +173,7 @@ int load_obj(const char *filename, MeshData& data, Mesh& mesh)
 }
 
 
-int load_ply(const char* filename, MeshData &data, Mesh &mesh)
+int load_ply(const char* filename, MBuf &data, Mesh &mesh)
 {
 	using namespace miniply;
 	PLYReader reader(filename);

@@ -22,7 +22,10 @@ namespace VtxAttr {
 	};
 };
 
-struct MeshData {
+/**
+ * Mesh Buffer (host side)
+ */
+struct MBuf {
 	
 	uint32_t vtx_attr     = 0;
 
@@ -40,6 +43,9 @@ struct MeshData {
 	void reserve_vertices(size_t num, bool shrink = false);
 };
 
+/**
+ * Mesh (TODO : material) 
+ */
 struct Mesh {
 	uint32_t index_offset;
 	uint32_t index_count;

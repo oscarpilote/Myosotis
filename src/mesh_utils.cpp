@@ -33,7 +33,7 @@ Aabb compute_mesh_bounds(const Vec3* positions, size_t vertex_count)
 	return {min, max}; 
 }
 
-Aabb compute_mesh_bounds(const Mesh& mesh, const MeshData& data)
+Aabb compute_mesh_bounds(const Mesh& mesh, const MBuf& data)
 {
 	const Vec3 *positions = data.positions + mesh.vertex_offset;
 	size_t vertex_count = mesh.vertex_count;
@@ -41,7 +41,7 @@ Aabb compute_mesh_bounds(const Mesh& mesh, const MeshData& data)
 	return (compute_mesh_bounds(positions, vertex_count));
 }
 
-void compute_mesh_normals(const Mesh& mesh, MeshData& data)
+void compute_mesh_normals(const Mesh& mesh, MBuf& data)
 {
 	if (!(data.vtx_attr & VtxAttr::NML))
 	{
@@ -64,8 +64,8 @@ void compute_mesh_normals(const Mesh& mesh, MeshData& data)
 	}
 	
 	TArray<uint32_t> remap(mesh.vertex_count);
-	//build_vertex_remap(mesh, data, VtxAttr::POS, &remap[0]);
-	build_position_remap(mesh, data, &remap[0]);
+	//build_position_remap(mesh, data, &remap[0]);
+	build_vertex_remap(mesh, data, VtxAttr::P, &remap[0]);
 
 	for (size_t i = 0; i < mesh.index_count; i+=3)
 	{
@@ -97,8 +97,8 @@ void compute_mesh_normals(const Mesh& mesh, MeshData& data)
 	}
 }
 
-void copy_indices(MeshData& dst, size_t dst_off, const MeshData& src, 
-		  size_t src_off, size_t idx_num, size_t vtx_off)
+void copy_indices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
+		  size_t idx_num, size_t vtx_off)
 {
 	static_assert(
 		sizeof(*dst.indices) == sizeof(*src.indices), 
@@ -124,8 +124,8 @@ void copy_indices(MeshData& dst, size_t dst_off, const MeshData& src,
 	}
 }
 
-void copy_vertices(MeshData& dst, size_t dst_off, const MeshData& src,
-		   size_t src_off, size_t vtx_num, size_t vtx_off)
+void copy_vertices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
+		   size_t vtx_num, size_t vtx_off)
 {
 	/* Copy only common attributes */
 	uint32_t vtx_attr = src.vtx_attr & dst.vtx_attr;
@@ -176,8 +176,7 @@ void copy_vertices(MeshData& dst, size_t dst_off, const MeshData& src,
 	}
 }
 
-void concat_mesh(Mesh& dst_m, MeshData& dst_d, const Mesh& src_m, 
-		 const MeshData& src_d)
+void concat_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d)
 {
 	/* Destination should have no more attributes than source */
 	assert((dst_d.vtx_attr & src_d.vtx_attr) == dst_d.vtx_attr);
@@ -205,9 +204,12 @@ void concat_mesh(Mesh& dst_m, MeshData& dst_d, const Mesh& src_m,
 	dst_m.vertex_count = total_vertices;
 }
 
-void join_mesh(Mesh& dst_m, MeshData& dst_d, const Mesh& src_m, 
-		const MeshData& src_d, VertexTable* vtx_table)
+void join_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d, 
+		VertexTable& vtx_table, uint32_t *remap)
 {
+	/* vtx_table should be based on dst_d */
+	assert(&vtx_table.get_mesh_data() == &dst_d);
+
 	/* Destination should have no more attributes than source */
 	assert((dst_d.vtx_attr & src_d.vtx_attr) == dst_d.vtx_attr);
 
@@ -215,10 +217,11 @@ void join_mesh(Mesh& dst_m, MeshData& dst_d, const Mesh& src_m,
 	for (size_t i = 0; i < src_m.index_count; ++i)
 	{
 		size_t dst_off = dst_m.vertex_offset + dst_m.vertex_count;
-		size_t src_off = src_m.vertex_offset;
+		size_t src_idx = src_d.indices[src_m.index_offset + i];
+		size_t src_off = src_idx + src_m.vertex_offset;
 		copy_vertices(dst_d, dst_off, src_d, src_off, 1);
 		uint32_t *p;
-		p = vtx_table->get_or_set(dst_off, dst_m.vertex_count);
+		p = vtx_table.get_or_set(dst_off, dst_m.vertex_count);
 		if (p)
 		{
 			idx[i] = *p;
@@ -228,13 +231,18 @@ void join_mesh(Mesh& dst_m, MeshData& dst_d, const Mesh& src_m,
 			idx[i] = dst_m.vertex_count;
 			dst_m.vertex_count++;
 		}
+		if (remap)
+		{
+			assert(src_idx < src_m.vertex_count);
+			remap[src_idx] = idx[i];
+		}
 	}
 	dst_m.index_count += src_m.index_count;
 }
 
-void compact_mesh(Mesh& mesh, MeshData& data, uint32_t *remap)
+void compact_mesh(Mesh& mesh, MBuf& data, uint32_t *remap)
 {
-	/* Eliminate degenerate triangles */
+	/* Eliminate spatially degenerate triangles */
 	build_position_remap(mesh, data, remap);
 	uint32_t total_indices = 0;
 	uint32_t *idx = data.indices + mesh.index_offset;
@@ -253,38 +261,9 @@ void compact_mesh(Mesh& mesh, MeshData& data, uint32_t *remap)
 		total_indices += 3;
 	}
 	mesh.index_count = total_indices;
+	
 
-	/* Remap vertices from indices using data.vtx_attr for vtx equiv. */
-	uint32_t vtx_num;
-#if (1)
-	switch (data.vtx_attr)
-	{
-	case (VtxAttr::P):
-		vtx_num = build_vertex_remap_from_indices<VtxAttr::P>(
-				mesh, data, remap);
-		break;
-	case (VtxAttr::PN):
-		vtx_num = build_vertex_remap_from_indices<VtxAttr::PN>(
-				mesh, data, remap);
-		break;
-	case (VtxAttr::PNT):
-		vtx_num = build_vertex_remap_from_indices<VtxAttr::PNT>(
-				mesh, data, remap);
-		break;
-	case (VtxAttr::PT):
-		vtx_num = build_vertex_remap_from_indices<VtxAttr::PT>(
-				mesh, data, remap);
-		break;
-	default:
-		printf("Should implement compact_mesh for %d\n", 
-			data.vtx_attr);
-		abort();
-	}
-#else
-	vtx_num = build_vertex_remap_from_indices(mesh, data, data.vtx_attr,
-			remap); 
-#endif
 	//remap_index_buffer(mesh, data, remap);
 	//remap_vertex_buffer(mesh, data, remap);
-	mesh.vertex_count = vtx_num;	
+	//mesh.vertex_count = vtx_num;	
 }

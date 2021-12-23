@@ -8,7 +8,7 @@
 
 /* I. Non templated version (uses branching for vertex attribs) */
 
-uint32_t build_vertex_remap(const Mesh& mesh, const MeshData& data, 
+uint32_t build_vertex_remap_old(const Mesh& mesh, const MBuf& data, 
 			    uint32_t vtx_attr, uint32_t *remap)
 {
 	VertexTable vtx_table{mesh.vertex_count, data, vtx_attr};
@@ -32,9 +32,31 @@ uint32_t build_vertex_remap(const Mesh& mesh, const MeshData& data,
 	return (num);
 }
 
+uint32_t build_vertex_remap(const Mesh& mesh, const MBuf& data, 
+			    uint32_t vtx_attr, uint32_t *remap)
+{
 
+	switch (vtx_attr) {
+	case (VtxAttr::P):
+	{
+		return build_vertex_remap<VtxAttr::P>(mesh, data, remap);
+	}
+	case (VtxAttr::PN):
+	{
+		return build_vertex_remap<VtxAttr::PN>(mesh, data, remap);
+	}
+	case (VtxAttr::PNT):
+	{
+		return build_vertex_remap<VtxAttr::PNT>(mesh, data, remap);
+	}
+	case (VtxAttr::PT):
+	{
+		return build_vertex_remap<VtxAttr::PT>(mesh, data, remap);
+	}
+	}
+}
 
-uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MeshData& data, 
+uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MBuf& data, 
 					 uint32_t vtx_attr, uint32_t *remap)
 {
 	VertexTable vtx_table{mesh.vertex_count, data, vtx_attr};
@@ -70,8 +92,7 @@ uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MeshData& data,
 
 
 template <uint32_t vtx_attr>
-uint32_t build_vertex_remap(const Mesh& mesh, const MeshData& data, 
-			    uint32_t *remap)
+uint32_t build_vertex_remap(const Mesh& mesh, const MBuf& data, uint32_t *remap)
 {
 	TVertexTable<vtx_attr> vtx_remap {mesh.vertex_count, {data}};
 
@@ -95,7 +116,7 @@ uint32_t build_vertex_remap(const Mesh& mesh, const MeshData& data,
 }
 
 template <uint32_t vtx_attr>
-uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MeshData& data, 
+uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MBuf& data, 
 					 uint32_t *remap)
 {
 	TVertexTable<vtx_attr> vtx_remap {mesh.vertex_count, {data}};
@@ -129,33 +150,33 @@ uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MeshData& data,
 /* Instantiations */
 
 template uint32_t build_vertex_remap<VtxAttr::P>(const Mesh& mesh, 
-		const MeshData& data, uint32_t *remap);
+		const MBuf& data, uint32_t *remap);
 
 template uint32_t build_vertex_remap_from_indices<VtxAttr::P>(
-		const Mesh& mesh, const MeshData& data, uint32_t *remap);
+		const Mesh& mesh, const MBuf& data, uint32_t *remap);
 
 template uint32_t build_vertex_remap<VtxAttr::PN>(
-		const Mesh& mesh, const MeshData& data, uint32_t *remap);
+		const Mesh& mesh, const MBuf& data, uint32_t *remap);
 
 template uint32_t build_vertex_remap_from_indices<VtxAttr::PN>(
-		const Mesh& mesh, const MeshData& data, uint32_t *remap);
+		const Mesh& mesh, const MBuf& data, uint32_t *remap);
 
 template uint32_t build_vertex_remap<VtxAttr::PT>(
-		const Mesh& mesh, const MeshData& data, uint32_t *remap);
+		const Mesh& mesh, const MBuf& data, uint32_t *remap);
 
 template uint32_t build_vertex_remap_from_indices<VtxAttr::PT>(
-		const Mesh& mesh, const MeshData& data, uint32_t *remap);
+		const Mesh& mesh, const MBuf& data, uint32_t *remap);
 
 template uint32_t build_vertex_remap<VtxAttr::PNT>(
-		const Mesh& mesh, const MeshData& data, uint32_t *remap);
+		const Mesh& mesh, const MBuf& data, uint32_t *remap);
 
 template uint32_t build_vertex_remap_from_indices<VtxAttr::PNT>(
-		const Mesh& mesh, const MeshData& data,	uint32_t *remap);
+		const Mesh& mesh, const MBuf& data,	uint32_t *remap);
 
 
 /* Apply remaps */
 
-void remap_index_buffer(const Mesh& mesh, MeshData& data, uint32_t *remap)
+void remap_index_buffer(const Mesh& mesh, MBuf& data, uint32_t *remap)
 {
 	uint32_t *idx = data.indices + mesh.index_offset;
 	for (size_t i = 0; i < mesh.index_count; ++i)
