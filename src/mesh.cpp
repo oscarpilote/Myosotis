@@ -16,7 +16,7 @@ void MBuf::clear()
 	MEMFREE(normals);
 	MEMFREE(uv[0]);
 	MEMFREE(uv[1]);
-	MEMFREE(parents);
+	MEMFREE(remap);
 	vtx_capacity = 0;
 }
 
@@ -62,9 +62,9 @@ void MBuf::reserve_vertices(size_t num, bool shrink)
 		REALLOC_NUM(uv[1], num);
 	}
 	
-	if (vtx_attr & VtxAttr::PAR)
+	if (vtx_attr & VtxAttr::MAP)
 	{
-		REALLOC_NUM(parents, num);
+		REALLOC_NUM(remap, num);
 	}
 	
 	vtx_capacity = num;

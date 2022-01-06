@@ -161,16 +161,16 @@ void copy_vertices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
 		memmove(to, from, vtx_num * sizeof(*src.uv[1]));
 	}
 	
-	if (vtx_attr & VtxAttr::PAR)
+	if (vtx_attr & VtxAttr::MAP)
 	{
-		to   = &dst.parents[dst_off]; 
-		from = &src.parents[src_off]; 
-		memmove(to, from, vtx_num * sizeof(*src.parents));
+		to   = &dst.remap[dst_off]; 
+		from = &src.remap[src_off]; 
+		memmove(to, from, vtx_num * sizeof(*src.remap));
 		if (vtx_off)
 		{
 			for (size_t i = 0; i < vtx_num; ++i)
 			{
-				dst.parents[dst_off + i] += vtx_off;
+				dst.remap[dst_off + i] += vtx_off;
 			}
 		}
 	}
@@ -210,7 +210,7 @@ void join_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d,
 	/* vtx_table should be based on dst_d */
 	assert(&vtx_table.get_mesh_data() == &dst_d);
 
-	/* Destination should have no more attributes than source */
+	/* Source should have all attributes of target */
 	assert((dst_d.vtx_attr & src_d.vtx_attr) == dst_d.vtx_attr);
 
 	uint32_t *idx = dst_d.indices + dst_m.index_offset + dst_m.index_count;

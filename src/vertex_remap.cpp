@@ -38,21 +38,16 @@ uint32_t build_vertex_remap(const Mesh& mesh, const MBuf& data,
 
 	switch (vtx_attr) {
 	case (VtxAttr::P):
-	{
 		return build_vertex_remap<VtxAttr::P>(mesh, data, remap);
-	}
 	case (VtxAttr::PN):
-	{
 		return build_vertex_remap<VtxAttr::PN>(mesh, data, remap);
-	}
 	case (VtxAttr::PNT):
-	{
 		return build_vertex_remap<VtxAttr::PNT>(mesh, data, remap);
-	}
 	case (VtxAttr::PT):
-	{
 		return build_vertex_remap<VtxAttr::PT>(mesh, data, remap);
-	}
+	default:
+		assert(0);
+		return 0;
 	}
 }
 

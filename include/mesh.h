@@ -13,7 +13,7 @@ namespace VtxAttr {
 		NML = 1 << 0,
 		UV0 = 1 << 1,
 		UV1 = 1 << 2,
-		PAR = 1 << 3,
+		MAP = 1 << 3,
 		/* Some common combo */
 		P   = POS,
 		PN  = POS | NML,
@@ -36,7 +36,7 @@ struct MBuf {
 	Vec3 *positions       = nullptr;
 	Vec3 *normals         = nullptr;
 	Vec2 *uv[MAX_UV_MAPS] = {nullptr};
-	uint32_t *parents     = nullptr;
+	uint32_t *remap       = nullptr;
 
 	void clear();
 	void reserve_indices (size_t num, bool shrink = false);
