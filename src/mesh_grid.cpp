@@ -168,3 +168,42 @@ void split_mesh_with_grid(
 		idx_remap.clear();
 	}
 }
+
+static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
+		MBuf& tmp_data, VertexTable& tmp_table)
+{
+	/* Reset vertex table and make sure tmp_data has enough free space */
+	size_t vtx_count = 0;
+	size_t idx_count  = 0;
+	for (size_t i = 0; i < num; ++i)
+	{
+		vtx_count += mesh[i].vertex_count;
+		idx_count  += mesh[i].index_count;
+	}
+	tmp_data.vtx_attr = data.vtx_attr;
+	tmp_data.reserve_indices(idx_count);
+	tmp_data.reserve_vertices(vtx_count);
+	tmp_table.clear();
+	
+	/* Join meshes */
+	Mesh group {0, 0, 0, 0};
+	uint32_t *remap_loc = remap;
+	for (size_t i = 0; i < num; ++i)
+	{
+		join_mesh(group, tmp_data, mesh[i], data, tmp_table, remap_loc);
+		remap_loc += mesh[i].vertex_count;
+	}
+	
+	/* Simplify group */
+	TArray<uint32_t> s_remap(group.vertex_count);
+	simplify_mesh(group, tmp_data, &s_remap[0]);
+
+	/* Update remap after simplification */
+	for (size_t i = 0; i < vtx_count; ++i)
+	{
+		assert(remap[i] < group.vertex_count);
+		remap[i] = s_remap[remap[i]];
+	}
+
+	/* 
+}
