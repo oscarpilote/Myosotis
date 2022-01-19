@@ -24,7 +24,7 @@ template <typename K, typename V, class H = DefaultHasher<K>>
 struct HashTable {
 public:
 	/* Methods */
-	HashTable(size_t expected_nkeys, H hasher = H());
+	HashTable(size_t expected_nkeys = 8, H hasher = H());
 	~HashTable();
 	size_t size() const;
 	void clear();

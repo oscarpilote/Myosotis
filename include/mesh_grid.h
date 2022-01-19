@@ -8,11 +8,6 @@
 #include "hash.h"
 #include "mesh.h"
 
-struct Grid {
-	Vec3 base;
-	float step;
-};
-
 union alignas(8) CellCoord {
 	struct {
 		int16_t lod;
@@ -51,11 +46,30 @@ inline bool CellCoordHasher::is_equal(CellCoord c1, CellCoord c2) const
 	return (c1 == c2);
 }
 
+struct MeshGrid {
+	/* Grid */
+	Vec3 base;
+	float step;
+	/* Data holding meshlets */
+	MBuf data;
+	TArray<Mesh> cells;
+	/* Facilities to access or query meshlets */
+	uint32_t levels;
+	TArray<uint32_t> offsets;
+	TArray<uint32_t> counts;
+	CellTable cell_table;
+	/* Methods */
+	void build_from_mesh(const MBuf& src, const Mesh& mesh);
+};
+
+
+
 void split_mesh_with_grid(
-		const Grid grid,
-		const MBuf& in,
+		const Vec3 base,
+		const float step,
+		const MBuf& src,
 		const Mesh& mesh,
-		MBuf& out,
+		MBuf& dst,
 		TArray<Mesh>& cells,
 		CellTable& cell_table);
 

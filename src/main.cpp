@@ -161,15 +161,14 @@ int main(int argc, char **argv)
 	if (argc > 3) 
 	{
 		timer_start();
-		int level = atoi(argv[3]);
-		float cube_size = model_size;  
-		Grid grid = {bbox.min, cube_size / (1 << level)};
-		MBuf data2;
-		TArray<Mesh> cells;
-		CellTable coord_to_cell_idx(1 << (2 * level + 3));
-		split_mesh_with_grid(grid, data, mesh, data2, cells, 
-				     coord_to_cell_idx);	
-		printf("Cells : %zu\n", cells.size);
+		MeshGrid mg;
+		uint32_t levels = atoi(argv[3]);
+		mg.step = model_size / (1 << levels);
+		mg.base = bbox.min;
+		mg.data.vtx_attr = data.vtx_attr | VtxAttr::MAP;
+		split_mesh_with_grid(mg.base, mg.step, data, mesh, mg.data, 
+				mg.cells, mg.cell_table);	
+		printf("Cells : %zu\n", mg.cells.size);
 		timer_stop("split_mesh_with_grid");
 	}
 	

@@ -11,39 +11,38 @@
 #include "mesh.h"
 #include "mesh_utils.h"
 
-inline
-
-static
-CellCoord point_to_cell_coord(const Vec3& p, const Grid& grid, uint8_t lod)
+static inline
+void point_to_cell_coord(CellCoord& coord, const Vec3& p, const Vec3& base, 
+		float inv_step)
 {
-	CellCoord coord;
-
-	float invstep = 1.f / ((1 << lod) * grid.step); 
-	Vec3 float_coord = (p - grid.base) * invstep;
+	Vec3 float_coord = (p - base) * inv_step;
 	
-	coord.lod = lod;
 	coord.x = floor(float_coord.x);
 	coord.y = floor(float_coord.y);
 	coord.z = floor(float_coord.z);
-	
-	return coord;  
 }
 
+
+
 void split_mesh_with_grid(
-		const Grid grid,
+		const Vec3 base,
+		const float step,
 		const MBuf& src,
 		const Mesh& mesh,
 		MBuf& dst,
 		TArray<Mesh>& cells,
 		CellTable& cell_table)
 {
-	dst.vtx_attr = src.vtx_attr;
+	/* TODO put in an init fct */
+	// dst.vtx_attr = src.vtx_attr;
 	
 	/* Loop over triangles and fill triangle to cell table. */
 	
 	size_t tri_count = mesh.index_count / 3;	
 	TArray<uint32_t> tri_idx_to_cell_idx(tri_count);
 	
+	CellCoord cell_coord {{0, 0, 0, 0}};
+	float inv_step = 1.f / step;
 	for (size_t tri_idx = 0; tri_idx < tri_count; ++tri_idx)
 	{
 		const uint32_t *indices = src.indices + mesh.index_offset;
@@ -55,7 +54,7 @@ void split_mesh_with_grid(
 
 		const Vec3 bary = (v1 + v2 + v3) * (1.f / 3.f);
 		
-		const CellCoord cell_coord = point_to_cell_coord(bary, grid, 0);
+		point_to_cell_coord(cell_coord, bary, base, inv_step);
 		
 		uint32_t cell_idx;
 		uint32_t *p = cell_table.get(cell_coord);
@@ -169,6 +168,8 @@ void split_mesh_with_grid(
 	}
 }
 
+
+
 static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
 		MBuf& tmp_data, VertexTable& tmp_table)
 {
@@ -196,7 +197,7 @@ static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
 	
 	/* Simplify group */
 	TArray<uint32_t> s_remap(group.vertex_count);
-	simplify_mesh(group, tmp_data, &s_remap[0]);
+	//simplify_mesh(group, tmp_data, &s_remap[0]);
 
 	/* Update remap after simplification */
 	for (size_t i = 0; i < vtx_count; ++i)
@@ -204,6 +205,4 @@ static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
 		assert(remap[i] < group.vertex_count);
 		remap[i] = s_remap[remap[i]];
 	}
-
-	/* 
 }
