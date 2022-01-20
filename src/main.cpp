@@ -161,12 +161,11 @@ int main(int argc, char **argv)
 	if (argc > 3) 
 	{
 		timer_start();
-		MeshGrid mg;
 		uint32_t levels = atoi(argv[3]);
-		mg.step = model_size / (1 << levels);
-		mg.base = bbox.min;
+		float step = model_size / (1 << levels);
+		Vec3 base = bbox.min;
+		MeshGrid mg(base, step, levels);
 		mg.build_from_mesh(data, mesh);
-		printf("Cells : %zu\n", mg.cells.size);
 		timer_stop("split_mesh_with_grid");
 	}
 	

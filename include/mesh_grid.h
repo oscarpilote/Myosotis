@@ -46,30 +46,29 @@ inline bool CellCoordHasher::is_equal(CellCoord c1, CellCoord c2) const
 	return (c1 == c2);
 }
 
+CellCoord parent_coord(const CellCoord coord);
+
 struct MeshGrid {
 	/* Grid */
 	Vec3 base;
 	float step;
 	/* Data holding meshlets */
 	MBuf data;
+	uint32_t next_index_offset  = 0;
+	uint32_t next_vertex_offset = 0;
+	TArray<CellCoord> cell_coords;
 	TArray<Mesh> cells;
 	/* Facilities to access or query meshlets */
 	uint32_t levels;
-	TArray<uint32_t> offsets;
-	TArray<uint32_t> counts;
+	TArray<uint32_t> cell_offsets;
+	TArray<uint32_t> cell_counts;
 	CellTable cell_table;
 	/* Methods */
+	MeshGrid(Vec3 base, float step, uint32_t levels);
 	void build_from_mesh(const MBuf& src, const Mesh& mesh);
+	void init_from_mesh(const MBuf& src, const Mesh& mesh);
+	void build_level(uint32_t level);
+	void build_parent_cell(CellCoord pcoord);
+	
 };
-
-
-
-void split_mesh_with_grid(
-		const Vec3 base,
-		const float step,
-		const MBuf& src,
-		const Mesh& mesh,
-		MBuf& dst,
-		TArray<Mesh>& cells,
-		CellTable& cell_table);
 

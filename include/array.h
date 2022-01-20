@@ -17,7 +17,7 @@ struct TArray {
 	 * Methods
 	 */
 	TArray();
-	TArray(size_t cap);
+	TArray(size_t size);
 	~TArray();
 	T& operator[] (size_t i);
 	const T& operator[] (size_t i) const;
@@ -30,11 +30,9 @@ template< typename T>
 TArray<T>::TArray(): size{0}, capacity{0}, data{nullptr} {}
 
 template <typename T>
-TArray<T>::TArray(size_t cap)
+TArray<T>::TArray(size_t size): size{size}, capacity{size}
 {
-	data = static_cast<T*>(malloc(cap * sizeof(T)));
-	capacity = cap;
-	size = cap;
+	data = static_cast<T*>(malloc(size * sizeof(T)));
 };
 
 template<typename T>

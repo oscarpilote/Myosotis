@@ -22,28 +22,77 @@ void point_to_cell_coord(CellCoord& coord, const Vec3& p, const Vec3& base,
 	coord.z = floor(float_coord.z);
 }
 
+CellCoord parent_coord(const CellCoord coord)
+{
+	CellCoord pcoord;
+
+	pcoord.lod = coord.lod + 1;
+	pcoord.x = (coord.x - (coord.x < 0)) / 2;
+	pcoord.y = (coord.y - (coord.y < 0)) / 2;
+	pcoord.z = (coord.z - (coord.z < 0)) / 2;
+
+	return pcoord;
+}
+
+MeshGrid::MeshGrid(Vec3 base, float step, uint32_t levels): 
+	base{base}, step{step},	levels{levels},
+	cell_offsets(levels), cell_counts(levels), cell_table(1 << (2 * levels + 3))
+{
+}
+
+void MeshGrid::build_level(uint32_t level)
+{
+
+	/* Base level is built elsewhere */
+	assert(level > 0);
+
+	cell_offsets[level] = cells.size;
+	cell_counts[level] = 0;
+
+	/* Discover cell coords and update counts */
+	for (uint32_t i = cell_offsets[level - 1]; i < cell_offsets[level]; ++i)
+	{
+		CellCoord ccoord = cell_coords[i];
+		CellCoord pcoord = parent_coord(ccoord);
+		uint32_t cell_idx;
+		uint32_t *p = cell_table.get(pcoord);
+		if (p)
+		{
+			continue;
+		}
+
+		/* Record parent cell */
+		cell_idx = cell_table.size();
+		cell_table.set_at(pcoord, cell_idx);
+		cells.push_back(Mesh{0, 0, 0, 0});
+		cell_coords.push_back(pcoord);
+		cell_counts[level]++;
+
+		/* Build parent cell */
+		build_parent_cell(pcoord);
+	}
+}
+
 void MeshGrid::build_from_mesh(const MBuf& src, const Mesh& mesh)
 {
 	data.vtx_attr = src.vtx_attr | VtxAttr::MAP;
 	
-	split_mesh_with_grid(base, step,src, mesh, data, cells, cell_table);
+	init_from_mesh(src, mesh);
 
-	
+	for (uint32_t level = 1; level < levels; level++)
+	{
+		build_level(level);
+		printf("Number of cells at level %d : %d\n", level, cell_counts[level]);
+	}
 }
 
 
-void split_mesh_with_grid(
-		const Vec3 base,
-		const float step,
-		const MBuf& src,
-		const Mesh& mesh,
-		MBuf& dst,
-		TArray<Mesh>& cells,
-		CellTable& cell_table)
+
+void MeshGrid::init_from_mesh(const MBuf& src, const Mesh& mesh)
 {
-	/* TODO put in an init fct */
-	// dst.vtx_attr = src.vtx_attr;
-	
+	cell_offsets[0] = 0;
+	cell_counts[0] = 0;
+
 	/* Loop over triangles and fill triangle to cell table. */
 	
 	size_t tri_count = mesh.index_count / 3;	
@@ -71,6 +120,8 @@ void split_mesh_with_grid(
 			cell_idx = cell_table.size();
 			cell_table.set_at(cell_coord, cell_idx);
 			cells.push_back(Mesh{0, 0, 0, 0});
+			cell_coords.push_back(cell_coord);
+			cell_counts[0]++;
 		}
 		else
 		{
@@ -94,7 +145,7 @@ void split_mesh_with_grid(
 	assert(total_index_count == mesh.index_count);
 	
 	/* Reserve indices */
-	dst.reserve_indices(total_index_count);
+	data.reserve_indices(total_index_count);
 
 	/* Reset cells index_count to zero momentarily */
 	for (size_t cell_idx = 0; cell_idx < cells.size; ++cell_idx)
@@ -109,7 +160,7 @@ void split_mesh_with_grid(
 		
 		size_t dst_offset = cell.index_offset + cell.index_count;
 		size_t src_offset = mesh.index_offset + 3 * tri_idx;
-		uint32_t *dst_idx = dst.indices + dst_offset;
+		uint32_t *dst_idx = data.indices + dst_offset;
 		uint32_t *src_idx = src.indices + src_offset;
 		memcpy(dst_idx, src_idx, 3 * sizeof(uint32_t));
 		
@@ -121,7 +172,7 @@ void split_mesh_with_grid(
 
 	/* Reserve vertices (total number is unknown at this point) */
 	size_t vertex_count_guess = mesh.vertex_count + mesh.vertex_count / 4;
-	dst.reserve_vertices(vertex_count_guess);
+	data.reserve_vertices(vertex_count_guess);
 	
 
 	/**
@@ -144,11 +195,11 @@ void split_mesh_with_grid(
 		Mesh& cell = cells[cell_idx];
 		cell.vertex_offset = total_vertex_count;
 
-		dst.reserve_vertices(total_vertex_count + cell.index_count);
+		data.reserve_vertices(total_vertex_count + cell.index_count);
 
 		assert(cell.vertex_count == 0);
 
-		uint32_t *cell_indices = dst.indices + cell.index_offset;
+		uint32_t *cell_indices = data.indices + cell.index_offset;
 
 		for (size_t i = 0; i < cell.index_count; ++i)
 		{
@@ -161,7 +212,7 @@ void split_mesh_with_grid(
 				idx_remap.set_at(old_idx, new_idx);
 				size_t idx_s = mesh.vertex_offset + old_idx;
 				size_t idx_d = total_vertex_count;
-				copy_vertices(dst, idx_d, src, idx_s, 1);
+				copy_vertices(data, idx_d, src, idx_s, 1);
 				cell.vertex_count++;
 				total_vertex_count++;
 			}
@@ -174,9 +225,16 @@ void split_mesh_with_grid(
 		/* Clear idx_remap for use with next cell */
 		idx_remap.clear();
 	}
+
+	next_index_offset = total_index_count;
+	next_vertex_offset = total_vertex_count;
 }
 
-
+void MeshGrid::build_parent_cell(CellCoord pcoord)
+{
+	/* TODO */
+	(void)pcoord;	
+}
 
 static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
 		MBuf& tmp_data, VertexTable& tmp_table)
