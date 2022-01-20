@@ -165,9 +165,7 @@ int main(int argc, char **argv)
 		uint32_t levels = atoi(argv[3]);
 		mg.step = model_size / (1 << levels);
 		mg.base = bbox.min;
-		mg.data.vtx_attr = data.vtx_attr | VtxAttr::MAP;
-		split_mesh_with_grid(mg.base, mg.step, data, mesh, mg.data, 
-				mg.cells, mg.cell_table);	
+		mg.build_from_mesh(data, mesh);
 		printf("Cells : %zu\n", mg.cells.size);
 		timer_stop("split_mesh_with_grid");
 	}

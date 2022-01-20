@@ -64,8 +64,8 @@ void compute_mesh_normals(const Mesh& mesh, MBuf& data)
 	}
 	
 	TArray<uint32_t> remap(mesh.vertex_count);
-	//build_position_remap(mesh, data, &remap[0]);
-	build_vertex_remap(mesh, data, VtxAttr::P, &remap[0]);
+	build_position_remap(mesh, data, &remap[0]);
+	//build_vertex_remap_old(mesh, data, VtxAttr::P, &remap[0]);
 
 	for (size_t i = 0; i < mesh.index_count; i+=3)
 	{

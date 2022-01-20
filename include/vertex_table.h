@@ -38,7 +38,14 @@ VertexHasher::hash(uint32_t key) const
 	static_assert(sizeof(uint32_t) == sizeof(float), 
 		"uint32_t and float are of different size on this platform.");
 
-	uint32_t hash = position_hash((const float *)(data.positions + key));
+	//uint32_t hash = position_hash((const float *)(data.positions + key));
+	uint32_t hash = 0;
+	{
+		uint32_t *p = reinterpret_cast<uint32_t*>(data.positions + key);
+		hash = murmur2_32(hash, p[0]); 
+		hash = murmur2_32(hash, p[1]); 
+		hash = murmur2_32(hash, p[2]); 
+	}
 	if (vtx_attr & VtxAttr::NML)
 	{
 		uint32_t *p = reinterpret_cast<uint32_t*>(data.normals + key);
@@ -114,7 +121,14 @@ TVertexHasher<vtx_attr>::hash(uint32_t key) const
 	static_assert(sizeof(uint32_t) == sizeof(float), 
 		"uint32_t and float are of different size on this platform.");
 
-	uint32_t hash = position_hash((const float *)(data.positions + key));
+	//uint32_t hash = position_hash((const float *)(data.positions + key));
+	uint32_t hash = 0;
+	{
+		uint32_t *p = reinterpret_cast<uint32_t*>(data.positions + key);
+		hash = murmur2_32(hash, p[0]); 
+		hash = murmur2_32(hash, p[1]); 
+		hash = murmur2_32(hash, p[2]); 
+	}
 	if constexpr (vtx_attr & VtxAttr::NML)
 	{
 		uint32_t *p = reinterpret_cast<uint32_t*>(data.normals + key);

@@ -22,6 +22,14 @@ void point_to_cell_coord(CellCoord& coord, const Vec3& p, const Vec3& base,
 	coord.z = floor(float_coord.z);
 }
 
+void MeshGrid::build_from_mesh(const MBuf& src, const Mesh& mesh)
+{
+	data.vtx_attr = src.vtx_attr | VtxAttr::MAP;
+	
+	split_mesh_with_grid(base, step,src, mesh, data, cells, cell_table);
+
+	
+}
 
 
 void split_mesh_with_grid(

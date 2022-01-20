@@ -3,6 +3,8 @@
 #include "mesh.h"
 
 /* I. Non templated version (uses branching for vertex attribs) */
+uint32_t build_vertex_remap_old(const Mesh& mesh, const MBuf& data, 
+			    uint32_t vtx_attr, uint32_t *remap);
 
 uint32_t build_vertex_remap(const Mesh& mesh, const MBuf& data, 
 			    uint32_t vtx_attr, uint32_t *remap);

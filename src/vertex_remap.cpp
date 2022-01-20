@@ -1,6 +1,7 @@
 #include "vertex_remap.h"
 
 #include <stdint.h>
+#include <stdio.h>
 
 #include "mesh.h"
 #include "vertex_table.h"
@@ -20,7 +21,7 @@ uint32_t build_vertex_remap_old(const Mesh& mesh, const MBuf& data,
 		uint32_t *p = vtx_table.get_or_set(i + mesh.vertex_offset, i);
 		
 		if (p)
-		{
+		{	
 			remap[i] = *p;
 		}
 		else

@@ -47,10 +47,10 @@ struct MBuf {
  * Mesh (TODO : material) 
  */
 struct Mesh {
-	uint32_t index_offset;
-	uint32_t index_count;
-	uint32_t vertex_offset;
-	uint32_t vertex_count;
+	uint32_t index_offset	= 0;
+	uint32_t index_count	= 0;
+	uint32_t vertex_offset	= 0;
+	uint32_t vertex_count	= 0;
 };
 
 

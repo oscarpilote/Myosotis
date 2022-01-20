@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdio.h>
 #include <stdint.h>
 
 /* Murmur2 32*/
@@ -37,6 +38,9 @@ inline uint64_t murmur2_64(uint64_t hash, uint64_t key)
 inline uint32_t position_hash(const float *pos)
 {
 	const uint32_t *p  = reinterpret_cast<const uint32_t*>(pos);
-	return  (p[0] * 73856093u) ^ (p[1] * 19349663u) ^ (p[2] * 83492791u);
+	unsigned int x = p[0] ^ (p[0] >> 17);
+	unsigned int y = p[1] ^ (p[1] >> 17);
+	unsigned int z = p[2] ^ (p[2] >> 17);
+	return  (x * 73856093u) ^ (y * 19349663u) ^ (z * 83492791u);
 }
 
