@@ -133,7 +133,7 @@ int main(int argc, char **argv)
 			mesh.vertex_count);
 	timer_stop("loading mesh");
 
-	if (argc > 2)
+	if (argc > 2 && *argv[2] == '1')
 	{
 		timer_start();
 		meshopt_statistics("Raw", data, mesh);
@@ -158,8 +158,8 @@ int main(int argc, char **argv)
 	float model_size = max(model_extent);
 	timer_stop("compute_mesh_bounds");
 
-	if (argc > 3) 
-	{
+	//if (argc > 3) 
+	//{
 		timer_start();
 		uint32_t levels = atoi(argv[3]);
 		float step = model_size / (1 << levels);
@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 		MeshGrid mg(base, step, levels);
 		mg.build_from_mesh(data, mesh);
 		timer_stop("split_mesh_with_grid");
-	}
+	//}
 	
 	/* Main window and context */
 	Myosotis app;
@@ -314,17 +314,31 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			glUseProgram(fetch_mesh_prg);
-			glBindVertexArray(fetch_vao);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pos);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, nml);
-			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
-			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
-			glUniform3fv(2, 1, &camera_pos[0]);
-			glUniform1i(3, app.cfg.smooth_shading);
-			glDrawElements(GL_TRIANGLES, mesh.index_count,
-					GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
+			//glUseProgram(fetch_mesh_prg);
+			//glBindVertexArray(fetch_vao);
+			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pos);
+			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, nml);
+			//glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
+			//glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
+			//glUniform3fv(2, 1, &camera_pos[0]);
+			//glUniform1i(3, app.cfg.smooth_shading);
+			//glDrawElements(GL_TRIANGLES, mesh.index_count,
+			//		GL_UNSIGNED_INT, 0);
+			//glBindVertexArray(0);
+			
+			//glUseProgram(mesh_prg);
+			//glBindVertexArray(default_vao);
+			//glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
+			//glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
+			//glUniform3fv(2, 1, &camera_pos[0]);
+			//glUniform1i(3, app.cfg.smooth_shading);
+			//for (size_t i = 0; i < ; ++i)
+			//{
+			//	glDrawElements(GL_TRIANGLES, mesh.index_count,
+			//		GL_UNSIGNED_INT, 0);
+			//}
+			//glBindVertexArray(0);
+
 		}
 
 

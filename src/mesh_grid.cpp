@@ -5,11 +5,15 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "meshoptimizer/src/meshoptimizer_mod.h"
+
 #include "mesh_grid.h"
 #include "vec3.h"
 #include "hash_table.h"
 #include "mesh.h"
 #include "mesh_utils.h"
+
+#include "chrono.h"
 
 static inline
 void point_to_cell_coord(CellCoord& coord, const Vec3& p, const Vec3& base, 
@@ -34,9 +38,33 @@ CellCoord parent_coord(const CellCoord coord)
 	return pcoord;
 }
 
+CellCoord child_coord(const CellCoord coord, uint32_t i)
+{
+	assert(i < 8);
+	CellCoord ccoord;
+	
+	ccoord.lod = coord.lod - 1;
+	ccoord.x = 2 * coord.x + ((i >> 0) & 1);
+	ccoord.y = 2 * coord.y + ((i >> 1) & 1);
+	ccoord.z = 2 * coord.z + ((i >> 2) & 1);
+
+	return ccoord;
+}
+
+void MeshGrid::get_children(CellCoord pcoord, int childs[8])
+{
+	for (uint32_t i = 0; i < 8; ++i)
+	{
+		CellCoord ccoord = child_coord(pcoord, i);
+		uint32_t *p = cell_table.get(ccoord);
+		childs[i] = p ? *p : -1;
+	}
+}
+
 MeshGrid::MeshGrid(Vec3 base, float step, uint32_t levels): 
 	base{base}, step{step},	levels{levels},
-	cell_offsets(levels), cell_counts(levels), cell_table(1 << (2 * levels + 3))
+	cell_offsets(levels), cell_counts(levels), 
+	cell_table(1 << (2 * levels + 3))
 {
 }
 
@@ -79,7 +107,9 @@ void MeshGrid::build_from_mesh(const MBuf& src, const Mesh& mesh)
 	
 	init_from_mesh(src, mesh);
 
-	for (uint32_t level = 1; level < levels; level++)
+	/* Hack */
+	for (uint32_t level = 1; level < 2; level++)
+	//for (uint32_t level = 1; level < levels; level++)
 	{
 		build_level(level);
 		printf("Number of cells at level %d : %d\n", level, cell_counts[level]);
@@ -232,8 +262,50 @@ void MeshGrid::init_from_mesh(const MBuf& src, const Mesh& mesh)
 
 void MeshGrid::build_parent_cell(CellCoord pcoord)
 {
-	/* TODO */
-	(void)pcoord;	
+	/* Get children */
+	int childs[8];
+	get_children(pcoord, childs);
+	
+	uint32_t idx_count = 0;
+	uint32_t vtx_count = 0;
+	for (uint32_t i = 0; i < 8; ++i)
+	{
+		if (childs[i] != -1)
+		{
+			idx_count += cells[childs[i]].index_count;
+			vtx_count += cells[childs[i]].vertex_count;
+		}
+	}
+
+	/* Join children */
+	MBuf tmp_data;
+	tmp_data.vtx_attr = data.vtx_attr;
+	tmp_data.reserve_indices(idx_count + 1);
+	tmp_data.reserve_vertices(vtx_count + 1);
+	VertexTable tmp_table(vtx_count, tmp_data, tmp_data.vtx_attr);
+	assert(vtx_count > 0);
+	TArray<uint32_t> remap(vtx_count + 1);
+	Mesh group {0, 0, 0, 0};
+	uint32_t *remap_loc = &remap[0];
+	for (uint32_t i = 0; i < 8; ++i)
+	{
+		if (childs[i] == -1) continue;
+		join_mesh(group, tmp_data, cells[childs[i]], data, tmp_table, remap_loc);
+		remap_loc += cells[childs[i]].vertex_count;
+	}
+
+	/* Simplify group */
+	timer_start();
+	uint32_t tri_in = group.index_count / 3;
+	group.index_count = meshopt_simplify_mod(tmp_data.indices, &remap[0], 
+			tmp_data.indices, group.index_count, (const float*)tmp_data.positions, 
+			group.vertex_count, 3 * sizeof(float), 
+			group.index_count / 4 + 1, 1, NULL);
+
+	uint32_t tri_out = group.index_count / 3;
+	unsigned int mus = timer_stop();
+	printf("Simplify %d to %d at %.2f Mtri/sec\n", tri_in, tri_out, (float)tri_in / mus);
+
 }
 
 static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
