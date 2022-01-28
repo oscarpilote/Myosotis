@@ -65,7 +65,8 @@ struct MeshGrid {
 	CellTable cell_table;
 	/* Methods */
 	MeshGrid(Vec3 base, float step, uint32_t levels);
-	void get_children(CellCoord pcoord, int childs[8]);
+	Mesh* get_cell(CellCoord ccoord);
+	unsigned get_children(CellCoord pcoord, Mesh* children[8]);
 	void build_from_mesh(const MBuf& src, const Mesh& mesh);
 	void init_from_mesh(const MBuf& src, const Mesh& mesh);
 	void build_level(uint32_t level);

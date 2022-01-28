@@ -12,7 +12,7 @@
 uint32_t build_vertex_remap_old(const Mesh& mesh, const MBuf& data, 
 			    uint32_t vtx_attr, uint32_t *remap)
 {
-	VertexTable vtx_table{mesh.vertex_count, data, vtx_attr};
+	VertexTable vtx_table{mesh.vertex_count, &data, vtx_attr};
 
 	uint32_t num = 0;
 
@@ -55,7 +55,7 @@ uint32_t build_vertex_remap(const Mesh& mesh, const MBuf& data,
 uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MBuf& data, 
 					 uint32_t vtx_attr, uint32_t *remap)
 {
-	VertexTable vtx_table{mesh.vertex_count, data, vtx_attr};
+	VertexTable vtx_table{mesh.vertex_count, &data, vtx_attr};
 
 	/* Init remap with ~0 == NO-REMAP */
 	for (size_t i = 0; i < mesh.vertex_count; ++i)
@@ -90,7 +90,7 @@ uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MBuf& data,
 template <uint32_t vtx_attr>
 uint32_t build_vertex_remap(const Mesh& mesh, const MBuf& data, uint32_t *remap)
 {
-	TVertexTable<vtx_attr> vtx_remap {mesh.vertex_count, {data}};
+	TVertexTable<vtx_attr> vtx_remap {mesh.vertex_count, {&data}};
 
 	uint32_t num = 0;
 
@@ -115,7 +115,7 @@ template <uint32_t vtx_attr>
 uint32_t build_vertex_remap_from_indices(const Mesh& mesh, const MBuf& data, 
 					 uint32_t *remap)
 {
-	TVertexTable<vtx_attr> vtx_remap {mesh.vertex_count, {data}};
+	TVertexTable<vtx_attr> vtx_remap {mesh.vertex_count, {&data}};
 
 	/* Init remap with ~0 == NO-REMAP */
 	for (size_t i = 0; i < mesh.vertex_count; ++i)

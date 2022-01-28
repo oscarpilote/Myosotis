@@ -208,7 +208,7 @@ void join_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d,
 		VertexTable& vtx_table, uint32_t *remap)
 {
 	/* vtx_table should be based on dst_d */
-	assert(&vtx_table.get_mesh_data() == &dst_d);
+	assert(vtx_table.get_mesh_data() == &dst_d);
 
 	/* Source should have all attributes of target */
 	assert((dst_d.vtx_attr & src_d.vtx_attr) == dst_d.vtx_attr);

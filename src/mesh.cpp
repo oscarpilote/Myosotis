@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "vec3.h"
 #include "vec2.h"
@@ -41,6 +42,8 @@ void MBuf::reserve_vertices(size_t num, bool shrink)
 	{
 		return;
 	}
+
+	//printf("Reserving %zu vertices\n", num);
 
 	if (true)
 	{
