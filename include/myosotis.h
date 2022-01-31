@@ -13,6 +13,7 @@ struct MyosotisCfg
 	bool   smooth_shading  = true;
 	bool   vsync           = true;
 	float  camera_fov      = 45.0f; 
+	int    level           = 0;  
 	ImVec4 clear_color     = ImVec4(0.25f, 0.22f, 0.15f, 1.00f);
 };
 

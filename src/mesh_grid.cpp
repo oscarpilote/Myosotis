@@ -326,7 +326,7 @@ void MeshGrid::build_parent_cell(CellCoord pcoord)
 			tmp_data.indices, remap2.data, tmp_data.indices, 
 			tmp_mesh.index_count, (const float*)tmp_data.positions, 
 			tmp_mesh.vertex_count, 3 * sizeof(float), 
-			tmp_mesh.index_count / 4 + 1, 1, NULL);
+			tmp_mesh.index_count / 4, 1, NULL);
 
 	//uint32_t tri_out = tmp_mesh.index_count / 3;
 	//unsigned int mus = timer_stop();

@@ -128,6 +128,13 @@ bool Myosotis::new_frame()
 	//ImGui::DragFloat("Trackball sensitivity", &viewer.sensitivity, 0.1,
 	//	0.1, 2.0, "%.1f");
 	//ImGui::ColorEdit3("Background color", (float*)&cfg.clear_color);
+	int& e = cfg.level;
+        ImGui::RadioButton("Level 0", &e, 0); ImGui::SameLine();
+        ImGui::RadioButton("Level 1", &e, 1); ImGui::SameLine();
+        ImGui::RadioButton("Level 2", &e, 2);
+        ImGui::RadioButton("Level 3", &e, 3); ImGui::SameLine();
+        ImGui::RadioButton("Level 4", &e, 4); ImGui::SameLine();
+        ImGui::RadioButton("Level 5", &e, 5);
 	ImGui::Text("Average %.3f ms/frame (%.1f FPS)", 
 			1000.0f / io->Framerate, io->Framerate);
 	ImGui::End();
