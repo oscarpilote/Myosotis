@@ -26,6 +26,7 @@ set(SOURCES
     src/overdrawanalyzer.cpp
     src/overdrawoptimizer.cpp
     src/simplifier.cpp
+    src/simplifier_mod.cpp
     src/spatialorder.cpp
     src/stripifier.cpp
     src/vcacheanalyzer.cpp

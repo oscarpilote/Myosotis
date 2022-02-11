@@ -14,9 +14,9 @@ layout (location = 0) out vec4 color;
 #define AMBIENT_COLOR vec3(1.f, 0.8f, 1.f)
 #define Ka 0.1f
 #define DIFFUSE_COLOR vec3(.88f, .75f, 0.43f)
-#define Kd .7f
+#define Kd .8f
 #define SPECULAR_COLOR vec3(1.f, 1.f, 1.f)
-#define Ks 0.2f
+#define Ks 0.1f
 #define shininess 8
 
 
@@ -52,8 +52,15 @@ void main()
 		float ca = max(dot(R, V), 0.f); 
 		Is = pow(ca, shininess) * shininess / 4;
 	}
+
+	/* Hack rock vs grass */
+	float rock_ratio = clamp(8.f  * (0.6f - N.z), 0, 1);
+	vec3 diffuse = vec3(0.67f, 0.64f, 0.46f) * rock_ratio + vec3(0.12, 0.25,
+			0.08) * (1.f - rock_ratio);
+
 	vec3 full = Ka * AMBIENT_COLOR;
-	full     += Kd * Id * DIFFUSE_COLOR;
+	//full     += Kd * Id * DIFFUSE_COLOR;
+	full += Kd * Id * diffuse;
 	full     += Ks * Is * SPECULAR_COLOR; 
 	color = vec4(full, 1.0f);
 }
