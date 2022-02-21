@@ -9,9 +9,11 @@ struct MyosotisCfg
 	const char *glsl_version = "#version 150";
 	
 	bool   adaptative_lod  = true;
+	bool   colorize_lod    = false;
 	bool   draw_normals    = false;
 	bool   smooth_shading  = false;
 	bool   frustum_cull    = true;
+	bool   wireframe_mode  = false;
 	bool   freeze_vp       = false;
 	bool   vsync           = true;
 	float  camera_fov      = 45.0f;

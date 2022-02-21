@@ -272,7 +272,7 @@ int main(int argc, char **argv)
 	glDepthMask(GL_TRUE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
+
 	/* Main loop */
 	TArray<uint32_t> to_draw;
 	while (!app.should_close()) {
@@ -283,6 +283,16 @@ int main(int argc, char **argv)
 		glClearColor(app.cfg.clear_color.x, app.cfg.clear_color.y, 
 			     app.cfg.clear_color.z, app.cfg.clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		if (app.cfg.wireframe_mode)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			app.cfg.smooth_shading = true;
+		}
+		else
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 
 		/* Update uniform data */
 		Mat4 proj = app.viewer.camera.view_to_clip();	
@@ -323,9 +333,18 @@ int main(int argc, char **argv)
 			{
 				Mesh& mesh = mg.cells[to_draw[i]];
 				CellCoord coord =  mg.cell_coords[to_draw[i]];
-				glUniform1i(4, coord.lod);
-				int variation = (coord.x & 1) + 2 * (coord.y & 1) + 4 * (coord.z & 1);
-				glUniform1i(5, variation); 
+				if (app.cfg.colorize_lod)
+				{
+					glUniform1i(4, coord.lod);
+					int variation = (coord.x & 1) + 2 * (coord.y & 1) + 4 * (coord.z & 1);
+					glUniform1i(5, variation);
+				}
+				else
+				{
+					/* Fake */
+					glUniform1i(4, -1);
+					glUniform1i(5, 0);
+				}
 				glDrawElementsBaseVertex(GL_TRIANGLES, 
 					mesh.index_count, 
 					GL_UNSIGNED_INT, 

@@ -69,7 +69,7 @@ void main()
 	//full += Kd * Id * diffuse;
 	full     += Ks * Is * SPECULAR_COLOR;
 	color = vec4(full, 1.0f);
-	//if (level == 0) {color.r *= (0.5f - 0.07f * variation);}
-	//if (level == 1) {color.g *= (0.5f - 0.07f * variation);}
-	//if (level == 2) {color.b *= (0.5f - 0.07f * variation);}
+	if (level == 0) {color.r *= (0.5f - 0.07f * variation);}
+	if (level == 1) {color.g *= (0.5f - 0.07f * variation);}
+	if (level == 2) {color.b *= (0.5f - 0.07f * variation);}
 }

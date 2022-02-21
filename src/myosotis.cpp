@@ -113,27 +113,50 @@ bool Myosotis::new_frame()
 	ImGui_ImplGlfw_NewFrame();
 	
 	ImGui::NewFrame();
+	
 	ImGui::Begin("Controls");
-	ImGui::Checkbox("Draw mesh", &cfg.adaptative_lod);
+	
+	ImGui::Checkbox("Adaptative LOD", &cfg.adaptative_lod);
+	
+	ImGui::Checkbox("Colorize LOD", &cfg.colorize_lod);
+	
 	ImGui::Checkbox("Draw normals", &cfg.draw_normals);
+	
 	ImGui::Checkbox("Smooth shading", &cfg.smooth_shading);
+	
 	ImGui::Checkbox("Frustum cull", &cfg.frustum_cull);
+	
+	if (ImGui::Checkbox("Wireframe mode", &cfg.wireframe_mode))
+	{
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//cfg.smooth_shading = true;
+	}
+	else
+	{
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	}
+	
 	ImGui::Checkbox("Freeze drawn cells", &cfg.freeze_vp);
+	
 	if (ImGui::Checkbox("Use Vsync", &cfg.vsync))
 	{
 		glfwSwapInterval(cfg.vsync);	
 	}
+	
 	if (ImGui::DragFloat("FOV", &cfg.camera_fov, 1, 1, 120, "%.0f"))
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}
+	
 	if (ImGui::DragFloat("kappa", &cfg.kappa, 0.1, 1, 10, "%.1f"))
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}
+	
 	//ImGui::DragFloat("Trackball sensitivity", &viewer.sensitivity, 0.1,
 	//	0.1, 2.0, "%.1f");
 	//ImGui::ColorEdit3("Background color", (float*)&cfg.clear_color);
+	
 	int& e = cfg.level;
         ImGui::RadioButton("Level 0", &e, 0); ImGui::SameLine();
         ImGui::RadioButton("Level 1", &e, 1); ImGui::SameLine();
@@ -144,10 +167,14 @@ bool Myosotis::new_frame()
         ImGui::RadioButton("Level 6", &e, 6); ImGui::SameLine();
         ImGui::RadioButton("Level 7", &e, 7); ImGui::SameLine();
         ImGui::RadioButton("Level 8", &e, 8);
+	
 	ImGui::Text("Average %.3f ms/frame (%.1f FPS)", 
 			1000.0f / io->Framerate, io->Framerate);
+	
 	ImGui::Text("Number of triangles : %d", stat.drawn_tris); 
+	
 	ImGui::Text("Number of cells : %d", stat.drawn_cells); 
+	
 	ImGui::End();
 	ImGui::Render();
 
