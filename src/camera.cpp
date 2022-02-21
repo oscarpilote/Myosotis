@@ -8,7 +8,7 @@
 #include "mat4.h"
 #include "geometry.h"
 #include "transform.h"
-
+#include "aabb.h"
 
 Camera::Camera(float aspect_ratio, float fov, Fov axis)
 
@@ -221,5 +221,89 @@ Vec3 Camera::world_coord_at(float x, float y, float depth) const
 	Vec3 ndc = nwd_to_ndc(x, y, depth);
 	
 	return transform(clip_to_world(), ndc);
+}
+
+int is_visible(const float *vtx, int n, const float *pvm)
+{
+	bool clipx, clip_R, clip_L;
+	bool clipy, clip_T, clip_B;
+	bool clipz, clip_F, clip_N;
+	float T, W;
+	clipx = clip_R = clip_L = 1;
+	clipy = clip_T = clip_B = 1;
+	clipz = clip_F = clip_N = 1;
+	for (int i = 0; i < n; ++i) {
+		W = pvm[3] * vtx[3 * i + 0] + pvm[7] * vtx[3 * i + 1] 
+			+ pvm[11] * vtx[3 * i + 2] + pvm[15];
+		if (clipx) {
+			T = pvm[0] * vtx[3 * i + 0] + pvm[4] * vtx[3 * i + 1] 
+				+ pvm[8] * vtx[3 * i + 2] + pvm[12];
+			clip_R = clip_R && (T >  W);
+			clip_L = clip_L && (T < -W);
+			clipx = clip_R || clip_L;
+		}
+		if (clipy) {
+			T = pvm[1] * vtx[3 * i + 0] + pvm[5] * vtx[3 * i + 1] 
+				+ pvm[9] * vtx[3 * i + 2] + pvm[13];
+			clip_T = clip_T && (T >  W);
+			clip_B = clip_B && (T < -W);
+			clipy = clip_T || clip_B;
+		}
+		if (clipz) {
+			T = pvm[2] * vtx[3 * i + 0] + pvm[6] * vtx[3 * i + 1] 
+				+ pvm[10] * vtx[3 * i + 2] + pvm[14];
+			clip_F = clip_F && (T >  W);
+			clip_N = clip_N && (T < -W);
+			clipz = clip_F || clip_N;
+		}
+		if (!(clipx || clipy || clipz)) return 1;
+	}
+	return 0;
+}
+
+int is_visible(const Aabb& bbox, const float *pvm)
+{
+	bool clip_R = true;
+	bool clip_L = true;
+	bool clip_T = true;
+	bool clip_B = true;
+	bool clip_F = true;
+	bool clip_N = true;
+
+	bool fully_in = true;
+
+	float T, W;
+	
+	for (int i = 0; i < 8; ++i) {
+		
+		float x = (i & 1) ? bbox.min.x : bbox.max.x;
+		float y = (i & 2) ? bbox.min.y : bbox.max.y;
+		float z = (i & 4) ? bbox.min.z : bbox.max.z;
+
+		W = pvm[3] * x + pvm[7] * y + pvm[11] * z + pvm[15];
+		T = pvm[0] * x + pvm[4] * y + pvm[8] * z + pvm[12];
+		bool is_R = (T > W);
+		bool is_L = (T < -W);
+		clip_R = clip_R && is_R;
+		clip_L = clip_L && is_L;
+		fully_in = fully_in && !is_R && !is_L; 
+		
+		T = pvm[1] * x + pvm[5] * y + pvm[9] * z + pvm[13];
+		bool is_T = (T > W);
+		bool is_B = (T < -W);
+		clip_T = clip_T && is_T;
+		clip_B = clip_B && is_B;
+		fully_in = fully_in && !is_T && !is_B; 
+			
+		T = pvm[2] * x + pvm[6] * y + pvm[10] * z + pvm[14];
+		bool is_F = (T > W);
+		bool is_N = (T < -W);
+		clip_F = clip_F && is_F;
+		clip_N = clip_N && is_N;
+		fully_in = fully_in && !is_F && !is_N; 
+	}
+
+	if (clip_R || clip_L || clip_T || clip_B || clip_F || clip_N) return 0;
+	return fully_in ? 2 : 1;
 }
 

@@ -71,6 +71,9 @@ struct MeshGrid {
 	void init_from_mesh(const MBuf& src, const Mesh& mesh);
 	void build_level(uint32_t level);
 	void build_parent_cell(CellCoord pcoord);
+	void select_cells_from_view_point(Vec3 vp, float kappa, 
+			const float *pvm, TArray<uint32_t>& to_draw);
+	float cell_view_ratio(const Vec3 vp, CellCoord coord);
 	
 };
 

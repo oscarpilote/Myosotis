@@ -6,7 +6,7 @@
 #include "mat4.h"
 #include "geometry.h"
 #include "frustum.h"
-
+#include "aabb.h"
 
 
 struct Camera 
@@ -161,3 +161,8 @@ private:
 	/* Optical configuration */
 	CameraFrustum frustum;
 };
+
+int is_visible(const float *vtx, int n, const float *pvm);
+int is_visible(const Aabb& bbox, const float *pvm);
+
+

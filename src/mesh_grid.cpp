@@ -12,6 +12,7 @@
 #include "hash_table.h"
 #include "mesh.h"
 #include "mesh_utils.h"
+#include "camera.h"
 
 #include "chrono.h"
 
@@ -75,8 +76,8 @@ unsigned MeshGrid::get_children(CellCoord pcoord, Mesh* children[8])
 	return child_count;
 }
 
-MeshGrid::MeshGrid(Vec3 base, float step, uint32_t levels): 
-	base{base}, step{step},	levels{levels},
+MeshGrid::MeshGrid(Vec3 base, float step, uint32_t max_level): 
+	base{base}, step{step},	levels{max_level + 1},
 	cell_offsets(levels), cell_counts(levels), 
 	cell_table(1 << (2 * levels + 3))
 {
@@ -379,10 +380,10 @@ void MeshGrid::build_parent_cell(CellCoord pcoord)
 	//printf("Updated parents done\n");
 }
 
-static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
+/*static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
 		MBuf& tmp_data, VertexTable& tmp_table)
 {
-	/* Reset vertex table and make sure tmp_data has enough free space */
+	// Reset vertex table and make sure tmp_data has enough free space 
 	size_t vtx_count = 0;
 	size_t idx_count  = 0;
 	for (size_t i = 0; i < num; ++i)
@@ -395,7 +396,7 @@ static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
 	tmp_data.reserve_vertices(vtx_count);
 	tmp_table.clear();
 	
-	/* Join meshes */
+	// Join meshes
 	Mesh group {0, 0, 0, 0};
 	uint32_t *remap_loc = remap;
 	for (size_t i = 0; i < num; ++i)
@@ -404,14 +405,90 @@ static void batch_simplify(Mesh *mesh, size_t num, MBuf& data, uint32_t *remap,
 		remap_loc += mesh[i].vertex_count;
 	}
 	
-	/* Simplify group */
+	// Simplify group
 	TArray<uint32_t> s_remap(group.vertex_count);
 	//simplify_mesh(group, tmp_data, &s_remap[0]);
 
-	/* Update remap after simplification */
+	//Update remap after simplification
 	for (size_t i = 0; i < vtx_count; ++i)
 	{
 		assert(remap[i] < group.vertex_count);
 		remap[i] = s_remap[remap[i]];
 	}
+}*/
+
+void MeshGrid::select_cells_from_view_point(const Vec3 vp, float kappa, 
+		const float* pvm, TArray<uint32_t>& to_draw)
+{
+	struct Candidate {
+		uint32_t idx;
+		uint32_t check_visibility;
+	};
+
+	/* TODO avoid malloc in hot rendering loop */
+	TArray<Candidate> to_visit;
+
+	/* Load max level cell(s) */
+	for (uint32_t i = 0; i < cell_counts[levels - 1]; i++)
+	{
+		Candidate candi = {cell_offsets[levels - 1] + i, 1};
+		to_visit.push_back(candi);
+	}
+
+	size_t visited = 0;
+
+	while(visited < to_visit.size)
+	{
+		Candidate candi = to_visit[visited++];
+		CellCoord coord = cell_coords[candi.idx];
+		
+		/* Frustum cull */
+		int visible = 1;
+		if (pvm && candi.check_visibility) 
+		{
+			Aabb bbox;
+			bbox.min.x = base.x + coord.x * step * (1 << coord.lod);
+			bbox.min.y = base.y + coord.y * step * (1 << coord.lod);
+			bbox.min.z = base.z + coord.z * step * (1 << coord.lod);
+			bbox.max.x = bbox.min.x + step * (1 << coord.lod);
+			bbox.max.y = bbox.min.y + step * (1 << coord.lod);
+			bbox.max.z = bbox.min.z + step * (1 << coord.lod);
+			visible = is_visible(bbox, pvm);
+			if (!visible) continue;
+		}
+
+		/* Distance based LOD */
+		if (coord.lod == 0 || cell_view_ratio(vp, coord) > kappa)
+		{
+			to_draw.push_back(candi.idx);
+		}
+		else
+		{
+			uint32_t check_vis = visible != 2;
+			for (int i = 0; i < 8; ++i)
+			{
+				CellCoord ccoord = child_coord(coord, i);
+				uint32_t *p = cell_table.get(ccoord);
+				if (p) 
+				{
+					to_visit.push_back({*p, check_vis});
+				}
+			}
+		}
+	}
+}
+
+float MeshGrid::cell_view_ratio(Vec3 vp, CellCoord coord)
+{
+	Vec3 diff = (vp - base) * (1.f / (step * (1 << coord.lod)));
+	
+	float rat = 0;
+	rat = coord.x - diff.x > rat ? coord.x - diff.x : rat;
+	rat = diff.x - (coord.x + 1) > rat ? diff.x - (coord.x + 1) : rat;
+	rat = coord.y - diff.y > rat ? coord.y - diff.y : rat;
+	rat = diff.y - (coord.y + 1) > rat ? diff.y - (coord.y + 1) : rat;
+	rat = coord.z - diff.z > rat ? coord.z - diff.z : rat;
+	rat = diff.z - (coord.z + 1) > rat ? diff.z - (coord.z + 1) : rat;
+
+	return rat;
 }

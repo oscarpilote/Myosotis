@@ -8,13 +8,22 @@ struct MyosotisCfg
 {
 	const char *glsl_version = "#version 150";
 	
-	bool   draw_mesh       = true;
+	bool   adaptative_lod  = true;
 	bool   draw_normals    = false;
-	bool   smooth_shading  = true;
+	bool   smooth_shading  = false;
+	bool   frustum_cull    = true;
+	bool   freeze_vp       = false;
 	bool   vsync           = true;
-	float  camera_fov      = 45.0f; 
+	float  camera_fov      = 45.0f;
 	int    level           = 0;  
+	float  kappa           = 3;
 	ImVec4 clear_color     = ImVec4(0.25f, 0.22f, 0.15f, 1.00f);
+};
+
+struct MyosotisStats
+{
+	int    drawn_cells = 0;
+	int    drawn_tris = 0;	
 };
 
 struct Myosotis {
@@ -24,6 +33,7 @@ struct Myosotis {
 	ImGuiIO*    io;
 	Viewer3D    viewer;
 	MyosotisCfg cfg;
+	MyosotisStats stat;
 
 	/* Methods */
 	bool init(int width, int height);

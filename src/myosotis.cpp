@@ -114,14 +114,20 @@ bool Myosotis::new_frame()
 	
 	ImGui::NewFrame();
 	ImGui::Begin("Controls");
-	ImGui::Checkbox("Draw mesh", &cfg.draw_mesh);
+	ImGui::Checkbox("Draw mesh", &cfg.adaptative_lod);
 	ImGui::Checkbox("Draw normals", &cfg.draw_normals);
 	ImGui::Checkbox("Smooth shading", &cfg.smooth_shading);
+	ImGui::Checkbox("Frustum cull", &cfg.frustum_cull);
+	ImGui::Checkbox("Freeze drawn cells", &cfg.freeze_vp);
 	if (ImGui::Checkbox("Use Vsync", &cfg.vsync))
 	{
 		glfwSwapInterval(cfg.vsync);	
 	}
 	if (ImGui::DragFloat("FOV", &cfg.camera_fov, 1, 1, 120, "%.0f"))
+	{
+		viewer.camera.set_fov(cfg.camera_fov);
+	}
+	if (ImGui::DragFloat("kappa", &cfg.kappa, 0.1, 1, 10, "%.1f"))
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}
@@ -135,8 +141,13 @@ bool Myosotis::new_frame()
         ImGui::RadioButton("Level 3", &e, 3); ImGui::SameLine();
         ImGui::RadioButton("Level 4", &e, 4); ImGui::SameLine();
         ImGui::RadioButton("Level 5", &e, 5);
+        ImGui::RadioButton("Level 6", &e, 6); ImGui::SameLine();
+        ImGui::RadioButton("Level 7", &e, 7); ImGui::SameLine();
+        ImGui::RadioButton("Level 8", &e, 8);
 	ImGui::Text("Average %.3f ms/frame (%.1f FPS)", 
 			1000.0f / io->Framerate, io->Framerate);
+	ImGui::Text("Number of triangles : %d", stat.drawn_tris); 
+	ImGui::Text("Number of cells : %d", stat.drawn_cells); 
 	ImGui::End();
 	ImGui::Render();
 

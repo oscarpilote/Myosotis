@@ -22,6 +22,7 @@ struct TArray {
 	T& operator[] (size_t i);
 	const T& operator[] (size_t i) const;
 	void push_back(const T &t);
+	T*   pop_back();
 	void resize(size_t size);
 	void clear();
 };
@@ -66,6 +67,17 @@ inline void TArray<T>::push_back(const T &t)
 		data = static_cast<T*>(realloc(data, capacity * sizeof(T)));
 	}
 	data[size++] = t;
+}
+
+template<typename T>
+inline T* TArray<T>::pop_back()
+{
+	T* ret = NULL;
+	if (size)
+	{
+		ret = &data[--size];
+	}
+	return ret;
 }
 
 template<typename T>

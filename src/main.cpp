@@ -6,8 +6,6 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
-#include "meshoptimizer/src/meshoptimizer.h"
-
 #ifndef GL_GLEXT_PROTOTYPES
 #define GL_GLEXT_PROTOTYPES 1
 #endif
@@ -22,72 +20,16 @@
 #include "mesh_io.h"
 #include "mesh_grid.h"
 #include "mesh_utils.h"
+#include "mesh_stats.h"
+#include "mesh_optimize.h"
 #include "chrono.h"
 #include "shaders.h"
 #include "myosotis.h"
 
+
 void syntax(char *argv[])
 {
 	printf("Syntax : %s mesh_file_name [max_level]\n", argv[0]);
-}
-
-void meshopt_statistics(const char *name, const MBuf& data, 
-			const Mesh& mesh)
-{
-	uint32_t *idx = data.indices + mesh.index_offset;
-	float *pos = (float*)(data.positions + mesh.vertex_offset);
-	uint32_t nidx = mesh.index_count;
-	uint32_t nvtx = mesh.vertex_count;
-	
-	const size_t kCacheSize = 16;
-	meshopt_VertexCacheStatistics vcs = meshopt_analyzeVertexCache(
-				idx, nidx, nvtx, kCacheSize, 0, 0);
-	meshopt_VertexFetchStatistics vfs = meshopt_analyzeVertexFetch(
-				idx, nidx, nvtx, sizeof(Vec3));
-	meshopt_OverdrawStatistics os = meshopt_analyzeOverdraw(
-				idx, nidx, pos, nvtx, sizeof(Vec3));
-	meshopt_VertexCacheStatistics vcs_nv = meshopt_analyzeVertexCache(
-			idx, nidx, nvtx, 32, 32, 32);
-	meshopt_VertexCacheStatistics vcs_amd = meshopt_analyzeVertexCache(
-			idx, nidx, nvtx, 14, 64, 128);
-	meshopt_VertexCacheStatistics vcs_intel = meshopt_analyzeVertexCache(
-			idx, nidx, nvtx, 128, 0, 0);
-
-	printf("%-9s: ACMR %.2f ATVR %.2f (NV %.2f AMD %.2f Intel %.2f) "
-	       "Overfetch %.2f Overdraw %.2f\n", name, vcs.acmr, vcs.atvr, 
-	       vcs_nv.atvr, vcs_amd.atvr, vcs_intel.atvr, vfs.overfetch, 
-	       os.overdraw);
-}
-
-void meshopt_optimize(MBuf& data, const Mesh& mesh)
-{
-	uint32_t *idx = data.indices + mesh.index_offset;
-	float *pos = (float*)(data.positions + mesh.vertex_offset);
-	float *nml = (float*)(data.normals + mesh.vertex_offset);
-	float *uv0 = (float*)(data.uv[0] + mesh.vertex_offset);
-	uint32_t nidx = mesh.index_count;
-	uint32_t nvtx = mesh.vertex_count;
-		
-	meshopt_optimizeVertexCache(idx, idx, nidx, nvtx);
-		
-	const float kThreshold = 1.01f;
-	meshopt_optimizeOverdraw(idx, idx, nidx, pos, nvtx, sizeof(Vec3), 
-				 kThreshold);
-
-	TArray<unsigned int> remap(nvtx);
-	meshopt_optimizeVertexFetchRemap(&remap[0], idx, nidx, nvtx);
-	meshopt_remapIndexBuffer(idx, idx, nidx, &remap[0]);
-	meshopt_remapVertexBuffer(pos, pos, nvtx, sizeof(Vec3), &remap[0]);
-	if (data.vtx_attr & VtxAttr::NML)
-	{
-		meshopt_remapVertexBuffer(nml, nml, nvtx, sizeof(Vec3), 
-					  &remap[0]);
-	}
-	if (data.vtx_attr & VtxAttr::UV0)
-	{
-		meshopt_remapVertexBuffer(uv0, uv0, nvtx, sizeof(Vec2),
-					  &remap[0]);
-	}
 }
 
 int main(int argc, char **argv)
@@ -102,7 +44,6 @@ int main(int argc, char **argv)
 	timer_start();
 	MBuf data;
 	Mesh mesh;
-
 	{
 		size_t len = strlen(argv[1]);
 		const char* ext = argv[1] + (len-3);
@@ -133,6 +74,7 @@ int main(int argc, char **argv)
 			mesh.vertex_count);
 	timer_stop("loading mesh");
 
+	/* Input mesh stat and optimization */
 	if (argc > 2 && *argv[2] == '1')
 	{
 		timer_start();
@@ -143,6 +85,7 @@ int main(int argc, char **argv)
 		meshopt_statistics("Optimized", data, mesh);
 	}
 
+	/* Computing mesh normals */
 	if (!(data.vtx_attr & VtxAttr::NML))
 	{
 		timer_start();
@@ -151,6 +94,7 @@ int main(int argc, char **argv)
 		timer_stop("compute_mesh_normals");
 	}
 
+	/* Computing mesh bounds */
 	timer_start();
 	Aabb bbox = compute_mesh_bounds(mesh, data);
 	Vec3 model_center = (bbox.min + bbox.max) * 0.5f;
@@ -158,16 +102,14 @@ int main(int argc, char **argv)
 	float model_size = max(model_extent);
 	timer_stop("compute_mesh_bounds");
 
-	//if (argc > 3) 
-	//{
-		timer_start();
-		uint32_t levels = atoi(argv[3]);
-		float step = model_size / (1 << levels);
-		Vec3 base = bbox.min;
-		MeshGrid mg(base, step, levels);
-		mg.build_from_mesh(data, mesh);
-		timer_stop("split_mesh_with_grid");
-	//}
+	/* Building mesh_grid */
+	timer_start();
+	int max_level = atoi(argv[3]);
+	float step = model_size / (1 << max_level);
+	Vec3 base = bbox.min;
+	MeshGrid mg(base, step, max_level);
+	mg.build_from_mesh(data, mesh);
+	timer_stop("split_mesh_with_grid");
 	
 	/* Main window and context */
 	Myosotis app;
@@ -332,6 +274,7 @@ int main(int argc, char **argv)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	/* Main loop */
+	TArray<uint32_t> to_draw;
 	while (!app.should_close()) {
 		
 		app.new_frame();
@@ -345,19 +288,51 @@ int main(int argc, char **argv)
 		Mat4 proj = app.viewer.camera.view_to_clip();	
 		Mat4 vm = app.viewer.camera.world_to_view();
 		Vec3 camera_pos = app.viewer.camera.get_position();
-		if (app.cfg.level > levels) app.cfg.level = levels; 
+		if (app.cfg.level > max_level) app.cfg.level = max_level; 
 		
 		/* Draw mesh */
-		if (app.cfg.draw_mesh)
+		if (app.cfg.adaptative_lod)
 		{
+			if (!app.cfg.freeze_vp)
+			{
+				Vec3 vp = app.viewer.camera.get_position();
+				float *pvm = NULL;
+				if (app.cfg.frustum_cull) 
+				{
+					Mat4 proj_vm = app.viewer.camera.world_to_clip();
+					pvm = &proj_vm(0,0);
+				}
+				to_draw.clear();
+				mg.select_cells_from_view_point(vp, app.cfg.kappa, pvm, to_draw);
+				app.stat.drawn_cells = to_draw.size;
+			}
+
+
+
 			glUseProgram(mesh_prg);
-			glBindVertexArray(default_vao);
+			glBindVertexArray(mg_default_vao);
 			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
 			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
 			glUniform3fv(2, 1, &camera_pos[0]);
 			glUniform1i(3, app.cfg.smooth_shading);
-			glDrawElements(GL_TRIANGLES, mesh.index_count,
-					GL_UNSIGNED_INT, 0);
+			
+			
+			app.stat.drawn_tris = 0;
+
+			for (int i = to_draw.size - 1; i >= 0; --i)
+			{
+				Mesh& mesh = mg.cells[to_draw[i]];
+				CellCoord coord =  mg.cell_coords[to_draw[i]];
+				glUniform1i(4, coord.lod);
+				int variation = (coord.x & 1) + 2 * (coord.y & 1) + 4 * (coord.z & 1);
+				glUniform1i(5, variation); 
+				glDrawElementsBaseVertex(GL_TRIANGLES, 
+					mesh.index_count, 
+					GL_UNSIGNED_INT, 
+					(void*)(mesh.index_offset * sizeof(uint32_t)),
+					mesh.vertex_offset);
+				app.stat.drawn_tris += mesh.index_count / 3;
+			}
 			glBindVertexArray(0);
 		}
 		else
@@ -371,16 +346,19 @@ int main(int argc, char **argv)
 			int cell_counts = mg.cell_counts[app.cfg.level];
 			int cell_offset = mg.cell_offsets[app.cfg.level];
 
+			app.stat.drawn_tris = 0;
+
 			for (int i = 0; i < cell_counts; ++i)
 			{
 				Mesh& mesh = mg.cells[cell_offset + i];
 				//printf("Drawing cell %i with %d and %d\n",
 				//		i, mesh.index_offset, mesh.vertex_offset);
 				glDrawElementsBaseVertex(GL_TRIANGLES, 
-						mesh.index_count, 
-						GL_UNSIGNED_INT, 
-						(void*)(mesh.index_offset * sizeof(uint32_t)),
-						mesh.vertex_offset);
+					mesh.index_count, 
+					GL_UNSIGNED_INT, 
+					(void*)(mesh.index_offset * sizeof(uint32_t)),
+					mesh.vertex_offset);
+				app.stat.drawn_tris += mesh.index_count / 3;
 			}
 			glBindVertexArray(0);
 			//glUseProgram(fetch_mesh_prg);
@@ -407,7 +385,6 @@ int main(int argc, char **argv)
 			//		GL_UNSIGNED_INT, 0);
 			//}
 			//glBindVertexArray(0);
-
 		}
 
 
