@@ -20,7 +20,7 @@ union alignas(8) CellCoord {
 
 inline bool operator==(CellCoord c1, CellCoord c2)
 {
-	return ( c1.key == c2.key );
+	return (c1.key == c2.key);
 }
 
 struct CellCoordHasher {
@@ -71,6 +71,7 @@ struct MeshGrid {
 	void init_from_mesh(const MBuf& src, const Mesh& mesh);
 	void build_level(uint32_t level);
 	void build_parent_cell(CellCoord pcoord);
+	void build_block(CellCoord bcoord, pthread_mutex_t* mutex);
 	void select_cells_from_view_point(Vec3 vp, float kappa, 
 			const float *pvm, TArray<uint32_t>& to_draw);
 	float cell_view_ratio(const Vec3 vp, CellCoord coord);

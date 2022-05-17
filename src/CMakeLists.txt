@@ -45,6 +45,7 @@ target_link_libraries(myosotis miniply)
 target_link_libraries(myosotis imgui_glfw_opengl3)
 target_link_libraries(myosotis OpenGL)
 target_link_libraries(myosotis glfw)
+target_link_libraries(myosotis pthread)
 target_link_libraries(myosotis ${CMAKE_DL_LIBS})
 target_link_libraries(myosotis meshoptimizer)
 
