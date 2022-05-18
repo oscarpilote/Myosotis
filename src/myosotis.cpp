@@ -148,7 +148,7 @@ bool Myosotis::new_frame()
 		viewer.camera.set_fov(cfg.camera_fov);
 	}
 	
-	if (ImGui::DragFloat("kappa", &cfg.kappa, 0.1, 1, 10, "%.1f"))
+	if (ImGui::DragFloat("kappa", &cfg.kappa, 0.1, 2, 50, "%.1f"))
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}

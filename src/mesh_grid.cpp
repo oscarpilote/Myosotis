@@ -19,7 +19,7 @@
 #include "chrono.h"
 
 
-//#define STRAIGHT_GROUPING 
+#define STRAIGHT_GROUPING 0
 
 static inline
 void point_to_cell_coord(CellCoord& coord, const Vec3& p, const Vec3& base, 
@@ -84,11 +84,33 @@ unsigned MeshGrid::get_children(CellCoord pcoord, Mesh* children[8])
 MeshGrid::MeshGrid(Vec3 base, float step, uint32_t max_level): 
 	base{base}, step{step},	levels{max_level + 1},
 	cell_offsets(levels), cell_counts(levels), 
-	cell_table(1 << (2 * levels + 3))
+	cell_table(1 << (2 * levels + 4))
 {
 }
 
-#ifdef STRAIGHT_GROUPING
+uint32_t MeshGrid::get_triangle_count(uint32_t level)
+{
+	if (level >= levels) return 0;
+	uint32_t count = 0;
+	for (uint32_t i = 0; i < cell_counts[level]; i++)
+	{
+		count += cells[i + cell_offsets[level]].index_count;
+	}
+	return (count / 3);
+}
+
+uint32_t MeshGrid::get_vertex_count(uint32_t level)
+{
+	if (level >= levels) return 0;
+	uint32_t count = 0;
+	for (uint32_t i = 0; i < cell_counts[level]; i++)
+	{
+		count += cells[i + cell_offsets[level]].vertex_count;
+	}
+	return (count);
+}
+
+#if STRAIGHT_GROUPING
 
 void MeshGrid::build_level(uint32_t level)
 {
@@ -134,18 +156,12 @@ static CellCoord block_base_coord(const CellCoord coord)
 		base.x = coord.x & 0xFFFE;
 		base.y = coord.y & 0xFFFE;
 		base.z = coord.z & 0xFFFE;
-		//printf("Impair : %d %d %d %d %d %d\n",
-		//		coord.x, coord.y, coord.z,
-		//		base.x, base.y, base.z);
 	}
 	else /* even levels */
 	{
 		base.x = ((coord.x + 1) & 0xFFFE) - 1;
 		base.y = ((coord.y + 1) & 0xFFFE) - 1;
 		base.z = ((coord.z + 1) & 0xFFFE) - 1;
-		//printf("Pair : %d %d %d %d %d %d\n",
-		//		coord.x, coord.y, coord.z,
-		//		base.x, base.y, base.z);
 	}
 	return base;
 }
@@ -169,15 +185,11 @@ void* build_blocks(void *args)
 		uint32_t todo_index = btd->block_index;
 		if (todo_index >= btd->todo_blocks.size)
 		{
-			printf("Exiting thread\n");
 			pthread_mutex_unlock(&btd->block_mutex);
 			break;
 		}
 		btd->block_index += 1;
 		pthread_mutex_unlock(&btd->block_mutex);
-		
-		//CellCoord base = btd->todo_blocks[todo_index];
-		//printf("Doing %d %d %d %d\n", base.lod, base.x, base.y, base.z);
 		
 		btd->mg.build_block(btd->todo_blocks[todo_index], 
 				&btd->block_mutex);
@@ -191,12 +203,24 @@ void MeshGrid::build_level(uint32_t level)
 	/* Base level is built elsewhere */
 	assert(level > 0);
 
+	
+	/* Pre allocate sufficently to avoid reallocation during of
+	 * these during fct call, this allows to avoid some costly
+	 * mutex lock.
+	 */
+	cell_coords.reserve(cell_coords.size + cell_counts[level - 1]);
+	cells.reserve(cell_coords.size + cell_counts[level - 1]);
+	cell_table.reserve(cell_coords.size + cell_counts[level - 1]);
+
+	/* Initiate, cell_counts[level] will be incremented during process */
 	cell_offsets[level] = cells.size;
 	cell_counts[level]  = 0;
-
-	/* */
+	
+	/* Temporary structures to record 4*4*4 blocks to be batched 
+	 * simplified*/
 	TArray<CellCoord> todo_blocks;
-	CellTable recorded_blocks;
+	todo_blocks.reserve(cell_counts[level - 1]);
+	CellTable recorded_blocks(cell_counts[level - 1]);
 
 	/* Discover blocks and record them for later treatment */
 	for (uint32_t i = 0; i < cell_counts[level - 1]; ++i)
@@ -210,6 +234,15 @@ void MeshGrid::build_level(uint32_t level)
 			todo_blocks.push_back(bcoord);
 		}
 	}
+
+	/* Pre allocate an upper bound on the number of new indices and
+	 * vertices in MBuf. This eases the parallel process of building
+	 * blocks by avoiding a lot of otherwise necessary mutex locks. 
+	 */
+	uint32_t alloc_idx = get_triangle_count(level - 1) * 3;
+	uint32_t alloc_vtx = get_vertex_count(level - 1);
+	data.reserve_indices(next_index_offset + alloc_idx);
+	data.reserve_vertices(next_vertex_offset + alloc_vtx);
 
 	/* Launch (and then join) threads to build separate blocks */
 	pthread_t thread[NUM_BLOCK_THREADS];
@@ -239,6 +272,7 @@ void MeshGrid::build_from_mesh(const MBuf& src, const Mesh& mesh)
 
 	for (uint32_t level = 1; level < levels; level++)
 	{
+
 		build_level(level);
 		printf("Number of cells at level %d : %d\n", level, 
 				cell_counts[level]);
@@ -415,8 +449,10 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 		pcoord.x += (i >> 0) & 1;
 		pcoord.y += (i >> 1) & 1;
 		pcoord.z += (i >> 2) & 1;
+		// TODO Check it is indeed safe to not mutex protect here.
+		//pthread_mutex_lock(mutex);
 		child_count[i] = get_children(pcoord, children[i]);
-		//printf("Child count: %d\n", child_count[i]);
+		//pthread_mutex_unlock(mutex);
 	}
 
 	/* Compute vtx and idx counts prior to simplification */
@@ -446,7 +482,6 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	/* Prepare tmp structures for simplification */
 	MBuf blk_data;
 	blk_data.vtx_attr = data.vtx_attr;
-	//printf("Total idx: %d vtx: %d\n", total_idx_count, total_vtx_count);
 	blk_data.reserve_indices(total_idx_count);
 	blk_data.reserve_vertices(total_vtx_count + 1);
 
@@ -461,8 +496,10 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	{
 		for (uint32_t j = 0; j < child_count[i]; ++j)
 		{
+			//pthread_mutex_lock(mutex);
 			join_mesh(blk_mesh, blk_data, *children[i][j], data, 
 					tmp_table, tmp_remap);
+			//pthread_mutex_unlock(mutex);
 			tmp_remap += children[i][j]->vertex_count;
 		}
 	}
@@ -562,23 +599,17 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 			cells.push_back(pmesh);
 			cell_coords.push_back(pcoord);
 			cell_counts[pcoord.lod]++;
-
-			data.reserve_indices(next_index_offset 
-					+ pmesh.index_count);
-			data.reserve_vertices(next_vertex_offset 
-					+ pmesh.vertex_count + 1);
-
-			copy_indices(data, pmesh.index_offset, pdata, 0, 
-					pmesh.index_count, 0);	
-
-			copy_vertices(data, pmesh.vertex_offset, pdata, 0, 
-					pmesh.vertex_count, 0);	
-
 			next_index_offset += pmesh.index_count;
 			next_vertex_offset += pmesh.vertex_count;
 
 		}
 		pthread_mutex_unlock(mutex);
+		
+		copy_indices(data, pmesh.index_offset, pdata, 0, 
+					pmesh.index_count, 0);	
+
+		copy_vertices(data, pmesh.vertex_offset, pdata, 0, 
+					pmesh.vertex_count, 0);	
 	}
 }
 		

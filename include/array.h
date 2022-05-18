@@ -24,6 +24,7 @@ struct TArray {
 	void push_back(const T &t);
 	T*   pop_back();
 	void resize(size_t size);
+	void reserve(size_t capacity);
 	void clear();
 };
 
@@ -89,6 +90,16 @@ void TArray<T>::resize(size_t size)
 	{
 		data = static_cast<T*>(realloc(data, size * sizeof(T)));
 		capacity = size;
+	}
+}
+
+template<typename T>
+void TArray<T>::reserve(size_t capacity)
+{
+	if (capacity > this->capacity)
+	{
+		data = static_cast<T*>(realloc(data, capacity * sizeof(T)));
+		this->capacity = capacity;
 	}
 }
 

@@ -75,6 +75,8 @@ struct MeshGrid {
 	void select_cells_from_view_point(Vec3 vp, float kappa, 
 			const float *pvm, TArray<uint32_t>& to_draw);
 	float cell_view_ratio(const Vec3 vp, CellCoord coord);
+	uint32_t get_triangle_count(uint32_t level);
+	uint32_t get_vertex_count(uint32_t level);
 	
 };
 

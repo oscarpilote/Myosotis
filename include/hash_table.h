@@ -28,6 +28,7 @@ public:
 	~HashTable();
 	size_t size() const;
 	void clear();
+	void reserve(size_t expected_nkeys);
 	V* get(K key) const;
 	V* get_or_set(K key, V alt_val);
 	void set_at(K key, V val);
@@ -40,7 +41,7 @@ protected:
 	V *vals;
 	H hasher;
 	/* Methods */
-	void grow();
+	void grow(size_t buckets);
 	bool load_factor_ok() const;
 };
 
@@ -112,6 +113,18 @@ void HashTable<K, V, H>::clear()
 	_size = 0;
 }
 
+template<typename K, typename V, typename H>
+void HashTable<K, V, H>::reserve(size_t expected_keys)
+{
+	size_t buckets = 1;
+	while (buckets < (3 * expected_keys / 2))
+	{
+		buckets *= 2;
+	}
+
+	grow(buckets);
+}
+
 
 
 template<typename K, typename V, typename H>
@@ -131,7 +144,7 @@ inline V* HashTable<K, V, H>::get_or_set(K key, V alt_val)
 		vals[bucket] = alt_val; 
 		_size++;
 		if UNLIKELY(!load_factor_ok()) {
-			grow();
+			grow(2 * _buckets);
 			assert(load_factor_ok());
 		}
 
@@ -152,7 +165,7 @@ inline void HashTable<K, V, H>::set_at(K key, V val)
 		keys[bucket] = key;
 		_size++;
 		if UNLIKELY(!load_factor_ok()) {
-			grow();
+			grow(2 * _buckets);
 			assert(load_factor_ok());
 		}
 	}
@@ -165,17 +178,15 @@ float HashTable<K, V, H>::load_factor() const
 }
 
 template <typename K, typename V, typename H>
-void HashTable<K, V, H>::grow()
+void HashTable<K, V, H>::grow(size_t new_buckets)
 {
+	if (new_buckets <= _buckets) return;
+
 #ifdef DEBUG
-	printf("HashTable Grow to %zu!\n", 2 * _buckets);
+	printf("HashTable Grow to %zu!\n", new_buckets);
 #endif
 
-	size_t new_buckets = 2 * _buckets;
-
 	assert((new_buckets & (new_buckets - 1)) == 0);
-	assert(new_buckets > _size);
-
 
 	K *newk = (K *)malloc(new_buckets * sizeof(*newk));
 	V *newv = (V *)malloc(new_buckets * sizeof(*newv));
