@@ -134,18 +134,18 @@ static CellCoord block_base_coord(const CellCoord coord)
 		base.x = coord.x & 0xFFFE;
 		base.y = coord.y & 0xFFFE;
 		base.z = coord.z & 0xFFFE;
-		printf("Impair : %d %d %d %d %d %d\n",
-				coord.x, coord.y, coord.z,
-				base.x, base.y, base.z);
+		//printf("Impair : %d %d %d %d %d %d\n",
+		//		coord.x, coord.y, coord.z,
+		//		base.x, base.y, base.z);
 	}
 	else /* even levels */
 	{
 		base.x = ((coord.x + 1) & 0xFFFE) - 1;
 		base.y = ((coord.y + 1) & 0xFFFE) - 1;
 		base.z = ((coord.z + 1) & 0xFFFE) - 1;
-		printf("Pair : %d %d %d %d %d %d\n",
-				coord.x, coord.y, coord.z,
-				base.x, base.y, base.z);
+		//printf("Pair : %d %d %d %d %d %d\n",
+		//		coord.x, coord.y, coord.z,
+		//		base.x, base.y, base.z);
 	}
 	return base;
 }
@@ -169,14 +169,15 @@ void* build_blocks(void *args)
 		uint32_t todo_index = btd->block_index;
 		if (todo_index >= btd->todo_blocks.size)
 		{
+			printf("Exiting thread\n");
 			pthread_mutex_unlock(&btd->block_mutex);
 			break;
 		}
 		btd->block_index += 1;
 		pthread_mutex_unlock(&btd->block_mutex);
 		
-		CellCoord base = btd->todo_blocks[todo_index];
-		printf("Doing %d %d %d %d\n", base.lod, base.x, base.y, base.z);
+		//CellCoord base = btd->todo_blocks[todo_index];
+		//printf("Doing %d %d %d %d\n", base.lod, base.x, base.y, base.z);
 		
 		btd->mg.build_block(btd->todo_blocks[todo_index], 
 				&btd->block_mutex);
@@ -411,10 +412,11 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	for (uint32_t i = 0; i < 8; ++i)
 	{
 		CellCoord pcoord = bcoord;
-		pcoord.x += i & 1;
-		pcoord.y += i & 2;
-		pcoord.z += i & 4;
-		child_count[i] = get_children(pcoord, children[i]);	
+		pcoord.x += (i >> 0) & 1;
+		pcoord.y += (i >> 1) & 1;
+		pcoord.z += (i >> 2) & 1;
+		child_count[i] = get_children(pcoord, children[i]);
+		//printf("Child count: %d\n", child_count[i]);
 	}
 
 	/* Compute vtx and idx counts prior to simplification */
@@ -444,6 +446,7 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	/* Prepare tmp structures for simplification */
 	MBuf blk_data;
 	blk_data.vtx_attr = data.vtx_attr;
+	//printf("Total idx: %d vtx: %d\n", total_idx_count, total_vtx_count);
 	blk_data.reserve_indices(total_idx_count);
 	blk_data.reserve_vertices(total_vtx_count + 1);
 
@@ -466,8 +469,10 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 
 	/* Simplify group */
 	TArray<uint32_t> simp_remap(blk_mesh.vertex_count);
+	assert(total_idx_count == blk_mesh.index_count);
+	TArray<uint32_t> trash(blk_mesh.index_count);
 	blk_mesh.index_count = meshopt_simplify_mod(
-			blk_data.indices, simp_remap.data, blk_data.indices, 
+			trash.data, simp_remap.data, blk_data.indices, 
 			blk_mesh.index_count, (const float*)blk_data.positions, 
 			blk_mesh.vertex_count, 3 * sizeof(float), 
 			blk_mesh.index_count / 4, 1, NULL);
@@ -494,7 +499,7 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 			uint32_t i0 = simp_remap[idx[k + 0]];
 			uint32_t i1 = simp_remap[idx[k + 1]];
 			uint32_t i2 = simp_remap[idx[k + 2]];
-			if (i0 == i1 || i1 == i2) continue;
+			if (i0 == i1 || i1 == i2 || i0 == i2) continue;
 			idx[new_idx_count++] = i0;
 			idx[new_idx_count++] = i1;
 			idx[new_idx_count++] = i2;
@@ -502,7 +507,7 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 		idx_count[i] = new_idx_count;
 	}
 
-	/* Split each parent cell meshe from the block and copy it back
+	/* Split each parent cell mesh from the block and copy it back
 	 * to the mesh grid buffer data.
 	 * We allocate a second temp MBuf to spend less time inside mutex. */ 
 	
@@ -545,16 +550,16 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 
 		/* Write parent cell to mesh grid (protected by mutex) */
 		CellCoord pcoord = bcoord;
-		pcoord.x += i & 1;
-		pcoord.y += i & 3;
-		pcoord.z += i & 7;
+		pcoord.x += (i >> 0) & 1;
+		pcoord.y += (i >> 1) & 1;
+		pcoord.z += (i >> 2) & 1;
 		pthread_mutex_lock(mutex);
 		{
 			pmesh.index_offset = next_index_offset;
 			pmesh.vertex_offset = next_vertex_offset;
 			uint32_t cell_idx = cell_table.size();
 			cell_table.set_at(pcoord, cell_idx);
-			cells.push_back(Mesh{0, 0, 0, 0});
+			cells.push_back(pmesh);
 			cell_coords.push_back(pcoord);
 			cell_counts[pcoord.lod]++;
 
