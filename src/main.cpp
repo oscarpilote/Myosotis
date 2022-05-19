@@ -26,6 +26,7 @@
 #include "shaders.h"
 #include "myosotis.h"
 
+#define TARGET_CELL_IDX_COUNT 10000 
 
 void syntax(char *argv[])
 {
@@ -67,7 +68,7 @@ int main(int argc, char **argv)
 		}
 		else 
 		{
-			printf("Unsupported file type extension: %s\n", ext);
+			printf("Unsupported (yet) file type extension: %s\n", ext);
 			return (EXIT_FAILURE);
 		}
 	}
@@ -77,7 +78,7 @@ int main(int argc, char **argv)
 	timer_stop("loading mesh");
 
 	/* Input mesh stat and optimization */
-	if (argc > 2 && *argv[2] == '1')
+	if (argc > 3 && *argv[3] == '1')
 	{
 		timer_start();
 		meshopt_statistics("Raw", data, mesh);
@@ -106,7 +107,24 @@ int main(int argc, char **argv)
 
 	/* Building mesh_grid */
 	timer_start();
-	int max_level = atoi(argv[3]);
+	int max_level;
+	if (argc > 2)
+	{
+		max_level = atoi(argv[2]);
+	}
+	else
+	{
+		max_level = 0;
+		while ((1 << (2 * max_level + 2)) * TARGET_CELL_IDX_COUNT 
+					< (int) mesh.index_count) 
+		{
+			max_level += 1;
+		}
+		printf("Maximum octree level unspecified. Using %d based\n",
+				max_level);
+		printf("on mesh index count.\n");
+
+	}
 	float step = model_size / (1 << max_level);
 	Vec3 base = bbox.min;
 	MeshGrid mg(base, step, max_level);
@@ -134,37 +152,7 @@ int main(int argc, char **argv)
 
 	glEnable(GL_DEBUG_OUTPUT);
 
-	/* Upload mesh */	
-
-	/* Index buffer */
-	//GLuint idx;
-	//glGenBuffers(1, &idx);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-	//	mesh.index_count * sizeof(uint32_t),
-	//	data.indices + mesh.index_offset,
-	//	GL_STATIC_DRAW);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	
-	/* Position buffer */
-	//GLuint pos;
-	//glGenBuffers(1, &pos);
-	//glBindBuffer(GL_ARRAY_BUFFER, pos);
-	//glBufferData(GL_ARRAY_BUFFER,
-	//		mesh.vertex_count * sizeof(Vec3),
-	//		data.positions + mesh.vertex_offset,
-	//		GL_STATIC_DRAW);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	/* Normal buffer */
-	//GLuint nml;
-	//glGenBuffers(1, &nml);
-	//glBindBuffer(GL_ARRAY_BUFFER, nml);
-	//glBufferData(GL_ARRAY_BUFFER,
-	//		mesh.vertex_count * sizeof(Vec3),
-	//		data.normals + mesh.vertex_offset,
-	//		GL_STATIC_DRAW);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	/* Upload mesh grid */	
 
 	/* Mesh grid Index buffer */
 	GLuint mg_idx;
@@ -208,23 +196,6 @@ int main(int argc, char **argv)
 
 	/* Setup VAOs */
 
-	/* Default VAO */
-	//GLuint default_vao;
-	//glGenVertexArrays(1, &default_vao);
-	//glBindVertexArray(default_vao);
-	//glBindBuffer(GL_ARRAY_BUFFER, pos);
-	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), 
-	//			(void *)0);
-	//glEnableVertexAttribArray(0);
-	//glBindBuffer(GL_ARRAY_BUFFER, nml);
-	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT),
-	//			(void *)0);
-	//glEnableVertexAttribArray(1);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
-	//glBindVertexArray(0);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
 	/* Mesh grid Default VAO */
 	GLuint mg_default_vao;
 	glGenVertexArrays(1, &mg_default_vao);
@@ -237,10 +208,10 @@ int main(int argc, char **argv)
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT),
 				(void *)0);
 	glEnableVertexAttribArray(1);
-	//glBindBuffer(GL_ARRAY_BUFFER, mg_par);
-	//glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, 1 * sizeof(GL_UNSIGNED_INT),
-	//			(void *)0);
-	//glEnableVertexAttribArray(2);
+	glBindBuffer(GL_ARRAY_BUFFER, mg_par);
+	glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, 1 * sizeof(GL_UNSIGNED_INT),
+				(void *)0);
+	glEnableVertexAttribArray(3);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_idx);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -250,6 +221,10 @@ int main(int argc, char **argv)
 	GLuint fetch_vao;
 	glGenVertexArrays(1, &fetch_vao);
 	glBindVertexArray(fetch_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, mg_par);
+	glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, 1 * sizeof(GL_UNSIGNED_INT),
+				(void *)0);
+	glEnableVertexAttribArray(3);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_idx);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -270,12 +245,12 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	
-	GLint nml_prg = create_shader("./shaders/face_normals.vert", 
-					  "./shaders/face_normals.frag");
-	if (nml_prg < 0) 
-	{
-		return EXIT_FAILURE;
-	}
+	//GLint nml_prg = create_shader("./shaders/face_normals.vert", 
+	//				  "./shaders/face_normals.frag");
+	//if (nml_prg < 0) 
+	//{
+	//	return EXIT_FAILURE;
+	//}
 	
 	/* Setup some rendering options */
 
@@ -285,8 +260,9 @@ int main(int argc, char **argv)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	/* Main loop */
+	/* Rendering loop */
 	TArray<uint32_t> to_draw;
+	TArray<uint32_t> parents;
 	while (!app.should_close()) {
 		
 		app.new_frame();
@@ -321,11 +297,14 @@ int main(int argc, char **argv)
 				float *pvm = NULL;
 				if (app.cfg.frustum_cull) 
 				{
-					Mat4 proj_vm = app.viewer.camera.world_to_clip();
+					Mat4 proj_vm = 
+						app.viewer.camera.world_to_clip();
 					pvm = &proj_vm(0,0);
 				}
 				to_draw.clear();
-				mg.select_cells_from_view_point(vp, app.cfg.kappa, pvm, to_draw);
+				parents.clear();
+				mg.select_cells_from_view_point(vp, 
+					app.cfg.kappa, pvm, to_draw, parents);
 				app.stat.drawn_cells = to_draw.size;
 			}
 
@@ -333,10 +312,14 @@ int main(int argc, char **argv)
 
 			glUseProgram(mesh_prg);
 			glBindVertexArray(mg_default_vao);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, mg_pos);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, mg_nml);
 			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
 			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
 			glUniform3fv(2, 1, &camera_pos[0]);
-			glUniform1i(3, app.cfg.smooth_shading);
+			glUniform1i(3, app.cfg.continuous_lod);
+			glUniform1i(4, app.cfg.smooth_shading);
+			glUniform1i(5, app.cfg.colorize_lod);
 			
 			
 			app.stat.drawn_tris = 0;
@@ -344,19 +327,11 @@ int main(int argc, char **argv)
 			for (int i = to_draw.size - 1; i >= 0; --i)
 			{
 				Mesh& mesh = mg.cells[to_draw[i]];
+				Mesh& pmesh = mg.cells[parents[i]];
 				CellCoord coord =  mg.cell_coords[to_draw[i]];
-				if (app.cfg.colorize_lod)
-				{
-					glUniform1i(4, coord.lod);
-					int variation = (coord.x & 1) + 2 * (coord.y & 1) + 4 * (coord.z & 1);
-					glUniform1i(5, variation);
-				}
-				else
-				{
-					/* Fake */
-					glUniform1i(4, -1);
-					glUniform1i(5, 0);
-				}
+				glUniform1i(6, coord.lod);
+				glUniform1i(7, mesh.vertex_offset);
+				glUniform1i(8, pmesh.vertex_offset);
 				glDrawElementsBaseVertex(GL_TRIANGLES, 
 					mesh.index_count, 
 					GL_UNSIGNED_INT, 
@@ -370,6 +345,9 @@ int main(int argc, char **argv)
 		{
 			glUseProgram(mesh_prg);
 			glBindVertexArray(mg_default_vao);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, mg_pos);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, mg_nml);
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, mg_par);
 			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
 			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
 			glUniform3fv(2, 1, &camera_pos[0]);
@@ -382,8 +360,6 @@ int main(int argc, char **argv)
 			for (int i = 0; i < cell_counts; ++i)
 			{
 				Mesh& mesh = mg.cells[cell_offset + i];
-				//printf("Drawing cell %i with %d and %d\n",
-				//		i, mesh.index_offset, mesh.vertex_offset);
 				glDrawElementsBaseVertex(GL_TRIANGLES, 
 					mesh.index_count, 
 					GL_UNSIGNED_INT, 
@@ -392,47 +368,9 @@ int main(int argc, char **argv)
 				app.stat.drawn_tris += mesh.index_count / 3;
 			}
 			glBindVertexArray(0);
-			//glUseProgram(fetch_mesh_prg);
-			//glBindVertexArray(fetch_vao);
-			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pos);
-			//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, nml);
-			//glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
-			//glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
-			//glUniform3fv(2, 1, &camera_pos[0]);
-			//glUniform1i(3, app.cfg.smooth_shading);
-			//glDrawElements(GL_TRIANGLES, mesh.index_count,
-			//		GL_UNSIGNED_INT, 0);
-			//glBindVertexArray(0);
-			
-			//glUseProgram(mesh_prg);
-			//glBindVertexArray(default_vao);
-			//glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
-			//glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
-			//glUniform3fv(2, 1, &camera_pos[0]);
-			//glUniform1i(3, app.cfg.smooth_shading);
-			//for (size_t i = 0; i < ; ++i)
-			//{
-			//	glDrawElements(GL_TRIANGLES, mesh.index_count,
-			//		GL_UNSIGNED_INT, 0);
-			//}
-			//glBindVertexArray(0);
 		}
 
 
-		/* Draw normals */
-		//if (app.cfg.draw_normals)
-		//{
-		//	glUseProgram(nml_prg);
-		//	glBindVertexArray(null_vao);
-		//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, idx);
-		//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pos);
-		//	glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
-		//	glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
-		//	glUniform3fv(2, 1, &camera_pos[0]);
-		//	glDrawArrays(GL_LINES, 0, 2 * mesh.index_count / 3);
-		//	glBindVertexArray(0);
-		//}
-		
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		
 		glfwSwapBuffers(app.window);

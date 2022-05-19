@@ -1,15 +1,27 @@
 #version 430 core
 
 /* In variables */
-layout (location = 0) in vec3 pos;
-layout (location = 1) in vec3 nml;
-layout (location = 2) in vec2 tex;
+layout (location = 0) in vec3 _pos;
+layout (location = 1) in vec3 _nml;
+layout (location = 2) in vec2 _tex;
+layout (location = 3) in int  parent_idx;
+
+/* SSBO */
+layout(std430, binding = 1) restrict readonly buffer positions {float Pos[];};
+layout(std430, binding = 2) restrict readonly buffer normals   {float Nml[];};
 
 
-/* Uniform variables */
+/* Uniform variables (cell independent) */
 layout (location = 0) uniform mat4 vm;
 layout (location = 1) uniform mat4 proj;
 layout (location = 2) uniform vec3 camera_pos;
+layout (location = 3) uniform bool continuous_lod;
+layout (location = 4) uniform bool smooth_shading;
+
+/* Uniform variables (cell dependent) */
+layout (location = 6) uniform int  level;
+layout (location = 7) uniform int  vtx_offset;
+layout (location = 8) uniform int  parent_vtx_offset;
 
 
 /* Out variables */
@@ -19,6 +31,21 @@ layout (location = 2) out vec3 L;  /* Light vector  */
 
 void main() 
 {
+	vec3 pos = _pos;
+	vec3 nml = _nml;
+	if (continuous_lod)
+	{
+		float ratio = 0.5; /* TODO */
+		uint j = 3 * (parent_idx +  parent_vtx_offset);
+		pos *= ratio;
+		pos += (1.0 - ratio) * vec3(Pos[j + 0], Pos[j + 1], Pos[j + 2]);
+
+		if (smooth_shading)
+		{
+			nml *= ratio;
+			nml += (1.0 - ratio) * vec3(Nml[j + 0], Nml[j + 1], Nml[j + 2]);
+		}
+	}
 
 	N = nml;
 	V = camera_pos - pos;

@@ -118,23 +118,15 @@ bool Myosotis::new_frame()
 	
 	ImGui::Checkbox("Adaptative LOD", &cfg.adaptative_lod);
 	
+	ImGui::Checkbox("Continuous LOD", &cfg.continuous_lod);
+	
 	ImGui::Checkbox("Colorize LOD", &cfg.colorize_lod);
-	
-	ImGui::Checkbox("Draw normals", &cfg.draw_normals);
-	
+		
 	ImGui::Checkbox("Smooth shading", &cfg.smooth_shading);
 	
 	ImGui::Checkbox("Frustum cull", &cfg.frustum_cull);
 	
-	if (ImGui::Checkbox("Wireframe mode", &cfg.wireframe_mode))
-	{
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		//cfg.smooth_shading = true;
-	}
-	else
-	{
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	}
+	ImGui::Checkbox("Wireframe mode", &cfg.wireframe_mode);
 	
 	ImGui::Checkbox("Freeze drawn cells", &cfg.freeze_vp);
 	
@@ -152,10 +144,6 @@ bool Myosotis::new_frame()
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}
-	
-	//ImGui::DragFloat("Trackball sensitivity", &viewer.sensitivity, 0.1,
-	//	0.1, 2.0, "%.1f");
-	//ImGui::ColorEdit3("Background color", (float*)&cfg.clear_color);
 	
 	int& e = cfg.level;
         ImGui::RadioButton("Level 0", &e, 0); ImGui::SameLine();

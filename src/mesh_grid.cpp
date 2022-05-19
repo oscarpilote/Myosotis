@@ -166,7 +166,7 @@ static CellCoord block_base_coord(const CellCoord coord)
 	return base;
 }
 
-#define NUM_BLOCK_THREADS 4
+#define NUM_BLOCK_THREADS 1
 struct BlockThreadData {
 	MeshGrid& mg;
 	TArray<CellCoord>& todo_blocks;
@@ -450,9 +450,9 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 		pcoord.y += (i >> 1) & 1;
 		pcoord.z += (i >> 2) & 1;
 		// TODO Check it is indeed safe to not mutex protect here.
-		//pthread_mutex_lock(mutex);
+		pthread_mutex_lock(mutex);
 		child_count[i] = get_children(pcoord, children[i]);
-		//pthread_mutex_unlock(mutex);
+		pthread_mutex_unlock(mutex);
 	}
 
 	/* Compute vtx and idx counts prior to simplification */
@@ -488,6 +488,11 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	VertexTable tmp_table(total_vtx_count + 16, &blk_data, 
 			blk_data.vtx_attr);
 	TArray<uint32_t> blk_remap(total_vtx_count);
+	for (uint32_t l = 0; l < total_vtx_count; ++l)
+	{
+		blk_remap[l] = ~0;
+	}
+
 	Mesh blk_mesh {0, 0, 0, 0};
 	
 	/* Join meshes */
@@ -496,16 +501,17 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	{
 		for (uint32_t j = 0; j < child_count[i]; ++j)
 		{
-			//pthread_mutex_lock(mutex);
+			pthread_mutex_lock(mutex);
 			join_mesh(blk_mesh, blk_data, *children[i][j], data, 
 					tmp_table, tmp_remap);
-			//pthread_mutex_unlock(mutex);
+			pthread_mutex_unlock(mutex);
 			tmp_remap += children[i][j]->vertex_count;
 		}
 	}
 
 	/* Simplify group */
 	TArray<uint32_t> simp_remap(blk_mesh.vertex_count);
+	//TArray<uint32_t> simp_remap(total_vtx_count);
 	assert(total_idx_count == blk_mesh.index_count);
 	TArray<uint32_t> trash(blk_mesh.index_count);
 	blk_mesh.index_count = meshopt_simplify_mod(
@@ -515,9 +521,11 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 			blk_mesh.index_count / 4, 1, NULL);
 
 	/* Update remap after simplification */
-	for (uint32_t i = 0; i < total_vtx_count; i++)
+	for (uint32_t k = 0; k < total_vtx_count; k++)
 	{
-		blk_remap[i] = simp_remap[blk_remap[i]];
+		assert(blk_remap[k] < blk_mesh.vertex_count);
+		blk_remap[k] = simp_remap[blk_remap[k]];
+		assert(blk_remap[k] < blk_mesh.vertex_count);
 	}
 
 	/* Update parent cell mesh indices by skipping triangles that
@@ -528,7 +536,7 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 		if (!child_count[i]) continue;
 
 		/* Skip triangles that have been collapsed by simplification */
-		/* We do that in place in tmp_data, and update index_count   */
+		/* We do that in place in blk_data, and update index_count   */
 		uint32_t *idx = blk_data.indices + idx_offset[i];
 		uint32_t new_idx_count = 0;
 		for (uint32_t k = 0; k < idx_count[i]; k+=3)
@@ -559,7 +567,7 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 
 		Mesh pmesh {0, 0, 0, 0};
 		Mesh blk_mesh_part {idx_offset[i], idx_count[i], 
-						0, total_vtx_count};
+						0, blk_mesh.vertex_count};
 		
 		/* We recycle tmp_table */
 		tmp_table.set_mesh_data(&pdata);
@@ -567,7 +575,10 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 
 		/* We also recycle simp_remap array for split remap */
 		uint32_t *split_remap = simp_remap.data;
-
+		for (uint32_t l = 0; l < blk_mesh.vertex_count; ++l)
+		{
+			split_remap[l] = ~0;
+		}
 		/* Perform the split */
 		join_mesh(pmesh, pdata, blk_mesh_part, blk_data, tmp_table, 
 				split_remap); 
@@ -576,11 +587,17 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 		uint32_t *src_idx = blk_remap.data + vtx_offset[i];
 		for (uint32_t j = 0; j < child_count[i]; ++j)
 		{
+			printf("Child %d\n", j);
 			const Mesh *cmesh = children[i][j];
 			uint32_t *tgt_idx = data.remap + cmesh->vertex_offset;
 			for (uint32_t k = 0; k < cmesh->vertex_count; k++)
 			{
 				tgt_idx[k] = split_remap[src_idx[k]];
+				if (tgt_idx[k] >= pmesh.vertex_count)
+				{
+					printf("%d %d \n", tgt_idx[k], pmesh.vertex_count);
+				}
+				//assert(tgt_idx[k] < pmesh.vertex_count);
 			}
 			src_idx += cmesh->vertex_count;
 		}
@@ -704,10 +721,12 @@ void MeshGrid::build_parent_cell(CellCoord pcoord)
 }
 
 void MeshGrid::select_cells_from_view_point(const Vec3 vp, float kappa, 
-		const float* pvm, TArray<uint32_t>& to_draw)
+		const float* pvm, TArray<uint32_t>& to_draw,
+		TArray<uint32_t>& parents)
 {
 	struct Candidate {
 		uint32_t idx;
+		uint32_t parent_idx;
 		uint32_t check_visibility;
 	};
 
@@ -717,7 +736,8 @@ void MeshGrid::select_cells_from_view_point(const Vec3 vp, float kappa,
 	/* Load max level cell(s) */
 	for (uint32_t i = 0; i < cell_counts[levels - 1]; i++)
 	{
-		Candidate candi = {cell_offsets[levels - 1] + i, 1};
+		uint32_t idx = cell_offsets[levels - 1] + i;
+		Candidate candi = {idx, idx, 1};
 		to_visit.push_back(candi);
 	}
 
@@ -747,6 +767,7 @@ void MeshGrid::select_cells_from_view_point(const Vec3 vp, float kappa,
 		if (coord.lod == 0 || cell_view_ratio(vp, coord) > kappa)
 		{
 			to_draw.push_back(candi.idx);
+			parents.push_back(candi.parent_idx);
 		}
 		else
 		{
@@ -757,7 +778,7 @@ void MeshGrid::select_cells_from_view_point(const Vec3 vp, float kappa,
 				uint32_t *p = cell_table.get(ccoord);
 				if (p) 
 				{
-					to_visit.push_back({*p, check_vis});
+					to_visit.push_back({*p, candi.idx, check_vis});
 				}
 			}
 		}
