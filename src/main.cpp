@@ -40,8 +40,10 @@ int main(int argc, char **argv)
 		return(EXIT_FAILURE);
 	}
 	
-	/* Load and process mesh */
+	/* Load and process mesh to build mesh_grid */
 	timer_start();
+
+	
 	MBuf data;
 	Mesh mesh;
 	{
@@ -110,7 +112,10 @@ int main(int argc, char **argv)
 	MeshGrid mg(base, step, max_level);
 	mg.build_from_mesh(data, mesh);
 	timer_stop("split_mesh_with_grid");
-	
+
+	/* Dispose original mesh */
+	data.clear();
+
 	/* Main window and context */
 	Myosotis app;
 	
@@ -132,34 +137,34 @@ int main(int argc, char **argv)
 	/* Upload mesh */	
 
 	/* Index buffer */
-	GLuint idx;
-	glGenBuffers(1, &idx);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		mesh.index_count * sizeof(uint32_t),
-		data.indices + mesh.index_offset,
-		GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	//GLuint idx;
+	//glGenBuffers(1, &idx);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
+	//glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+	//	mesh.index_count * sizeof(uint32_t),
+	//	data.indices + mesh.index_offset,
+	//	GL_STATIC_DRAW);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	
 	/* Position buffer */
-	GLuint pos;
-	glGenBuffers(1, &pos);
-	glBindBuffer(GL_ARRAY_BUFFER, pos);
-	glBufferData(GL_ARRAY_BUFFER,
-			mesh.vertex_count * sizeof(Vec3),
-			data.positions + mesh.vertex_offset,
-			GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//GLuint pos;
+	//glGenBuffers(1, &pos);
+	//glBindBuffer(GL_ARRAY_BUFFER, pos);
+	//glBufferData(GL_ARRAY_BUFFER,
+	//		mesh.vertex_count * sizeof(Vec3),
+	//		data.positions + mesh.vertex_offset,
+	//		GL_STATIC_DRAW);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	/* Normal buffer */
-	GLuint nml;
-	glGenBuffers(1, &nml);
-	glBindBuffer(GL_ARRAY_BUFFER, nml);
-	glBufferData(GL_ARRAY_BUFFER,
-			mesh.vertex_count * sizeof(Vec3),
-			data.normals + mesh.vertex_offset,
-			GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//GLuint nml;
+	//glGenBuffers(1, &nml);
+	//glBindBuffer(GL_ARRAY_BUFFER, nml);
+	//glBufferData(GL_ARRAY_BUFFER,
+	//		mesh.vertex_count * sizeof(Vec3),
+	//		data.normals + mesh.vertex_offset,
+	//		GL_STATIC_DRAW);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	/* Mesh grid Index buffer */
 	GLuint mg_idx;
@@ -190,25 +195,35 @@ int main(int argc, char **argv)
 			mg.data.normals,
 			GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
+	/* Mesh grid Vertex Parent Idx buffer */
+	GLuint mg_par;
+	glGenBuffers(1, &mg_par);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_par);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+		mg.data.vtx_capacity * sizeof(uint32_t),
+		mg.data.remap,
+		GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	/* Setup VAOs */
 
 	/* Default VAO */
-	GLuint default_vao;
-	glGenVertexArrays(1, &default_vao);
-	glBindVertexArray(default_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, pos);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), 
-				(void *)0);
-	glEnableVertexAttribArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, nml);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT),
-				(void *)0);
-	glEnableVertexAttribArray(1);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
-	glBindVertexArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//GLuint default_vao;
+	//glGenVertexArrays(1, &default_vao);
+	//glBindVertexArray(default_vao);
+	//glBindBuffer(GL_ARRAY_BUFFER, pos);
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT), 
+	//			(void *)0);
+	//glEnableVertexAttribArray(0);
+	//glBindBuffer(GL_ARRAY_BUFFER, nml);
+	//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT),
+	//			(void *)0);
+	//glEnableVertexAttribArray(1);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
+	//glBindVertexArray(0);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
 	/* Mesh grid Default VAO */
 	GLuint mg_default_vao;
@@ -222,6 +237,10 @@ int main(int argc, char **argv)
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GL_FLOAT),
 				(void *)0);
 	glEnableVertexAttribArray(1);
+	//glBindBuffer(GL_ARRAY_BUFFER, mg_par);
+	//glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, 1 * sizeof(GL_UNSIGNED_INT),
+	//			(void *)0);
+	//glEnableVertexAttribArray(2);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_idx);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -231,15 +250,9 @@ int main(int argc, char **argv)
 	GLuint fetch_vao;
 	glGenVertexArrays(1, &fetch_vao);
 	glBindVertexArray(fetch_vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_idx);
 	glBindVertexArray(0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	/* Vertex pull VAO */
-	GLuint null_vao;
-	glGenVertexArrays(1, &null_vao);
-	glBindVertexArray(null_vao);
-	glBindVertexArray(0);
 
 	/* Setup programs */
 	
@@ -266,7 +279,6 @@ int main(int argc, char **argv)
 	
 	/* Setup some rendering options */
 
-	//glDisable(GL_CULL_FACE);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
@@ -408,18 +420,18 @@ int main(int argc, char **argv)
 
 
 		/* Draw normals */
-		if (app.cfg.draw_normals)
-		{
-			glUseProgram(nml_prg);
-			glBindVertexArray(null_vao);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, idx);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pos);
-			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
-			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
-			glUniform3fv(2, 1, &camera_pos[0]);
-			glDrawArrays(GL_LINES, 0, 2 * mesh.index_count / 3);
-			glBindVertexArray(0);
-		}
+		//if (app.cfg.draw_normals)
+		//{
+		//	glUseProgram(nml_prg);
+		//	glBindVertexArray(null_vao);
+		//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, idx);
+		//	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pos);
+		//	glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
+		//	glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
+		//	glUniform3fv(2, 1, &camera_pos[0]);
+		//	glDrawArrays(GL_LINES, 0, 2 * mesh.index_count / 3);
+		//	glBindVertexArray(0);
+		//}
 		
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		
