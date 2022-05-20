@@ -439,8 +439,8 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	uint32_t idx_offset[8];
 	uint32_t vtx_offset[8];
 	/* Some maximums for allocation bounds */
-	uint32_t max_idx_count = 0;
-	uint32_t max_vtx_count = 0;
+	uint32_t max_idx_count = 1;
+	uint32_t max_vtx_count = 1;
 
 	/* Count children for each parent cell in the block */
 	for (uint32_t i = 0; i < 8; ++i)
@@ -450,14 +450,15 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 		pcoord.y += (i >> 1) & 1;
 		pcoord.z += (i >> 2) & 1;
 		// TODO Check it is indeed safe to not mutex protect here.
-		pthread_mutex_lock(mutex);
+		//pthread_mutex_lock(mutex);
 		child_count[i] = get_children(pcoord, children[i]);
-		pthread_mutex_unlock(mutex);
+		//pthread_mutex_unlock(mutex);
 	}
 
 	/* Compute vtx and idx counts prior to simplification */
 	uint32_t total_idx_count = 0;
 	uint32_t total_vtx_count = 0;
+	printf("Counts:\n");
 	for (uint32_t i = 0; i < 8; i++)
 	{
 		idx_count[i] = 0;
@@ -477,7 +478,9 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 			idx_offset[i - 1] + idx_count[i - 1];
 		vtx_offset[i] = (i == 0) ? 0 :
 			vtx_offset[i - 1] + vtx_count[i - 1];
+		printf("%d %d %d %d\n", idx_offset[i], idx_count[i], vtx_offset[i], vtx_count[i]);
 	}
+	printf("Max %d %d Total %d %d\n", max_idx_count, max_vtx_count, total_idx_count, total_vtx_count);
 
 	/* Prepare tmp structures for simplification */
 	MBuf blk_data;
@@ -501,56 +504,71 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	{
 		for (uint32_t j = 0; j < child_count[i]; ++j)
 		{
-			pthread_mutex_lock(mutex);
+			//pthread_mutex_lock(mutex);
 			join_mesh(blk_mesh, blk_data, *children[i][j], data, 
 					tmp_table, tmp_remap);
-			pthread_mutex_unlock(mutex);
+			//pthread_mutex_unlock(mutex);
 			tmp_remap += children[i][j]->vertex_count;
 		}
+	}
+	
+	for (uint32_t k = 0; k < total_vtx_count; k++)
+	{
+		if (blk_remap[k] >= blk_mesh.vertex_count)
+		{
+			printf("%d %d\n", blk_remap[k], blk_mesh.vertex_count);
+		}
+		assert(blk_remap[k] < blk_mesh.vertex_count);
 	}
 
 	/* Simplify group */
 	TArray<uint32_t> simp_remap(blk_mesh.vertex_count);
-	//TArray<uint32_t> simp_remap(total_vtx_count);
-	assert(total_idx_count == blk_mesh.index_count);
 	TArray<uint32_t> trash(blk_mesh.index_count);
-	blk_mesh.index_count = meshopt_simplify_mod(
+	meshopt_simplify_mod(
 			trash.data, simp_remap.data, blk_data.indices, 
 			blk_mesh.index_count, (const float*)blk_data.positions, 
 			blk_mesh.vertex_count, 3 * sizeof(float), 
 			blk_mesh.index_count / 4, 1, NULL);
 
+	/* Update blk_mesh indices after simplification */
+	for (uint32_t k = 0; k < blk_mesh.index_count; k++)
+	{
+		uint32_t *idx = blk_data.indices + blk_mesh.index_offset;
+		assert(idx[k] < blk_mesh.vertex_count);
+		idx[k] = simp_remap[idx[k]];
+		assert(idx[k] < blk_mesh.vertex_count);
+	}
+
 	/* Update remap after simplification */
 	for (uint32_t k = 0; k < total_vtx_count; k++)
 	{
-		assert(blk_remap[k] < blk_mesh.vertex_count);
 		blk_remap[k] = simp_remap[blk_remap[k]];
 		assert(blk_remap[k] < blk_mesh.vertex_count);
 	}
 
 	/* Update parent cell mesh indices by skipping triangles that
 	 * have turned collapsed by simplification. */
-	for (uint32_t i = 0; i < 8; i++)
-	{
-		/* Go forward if this parent cell has no child */ 
-		if (!child_count[i]) continue;
-
-		/* Skip triangles that have been collapsed by simplification */
-		/* We do that in place in blk_data, and update index_count   */
-		uint32_t *idx = blk_data.indices + idx_offset[i];
-		uint32_t new_idx_count = 0;
-		for (uint32_t k = 0; k < idx_count[i]; k+=3)
-		{
-			uint32_t i0 = simp_remap[idx[k + 0]];
-			uint32_t i1 = simp_remap[idx[k + 1]];
-			uint32_t i2 = simp_remap[idx[k + 2]];
-			if (i0 == i1 || i1 == i2 || i0 == i2) continue;
-			idx[new_idx_count++] = i0;
-			idx[new_idx_count++] = i1;
-			idx[new_idx_count++] = i2;
-		}
-		idx_count[i] = new_idx_count;
-	}
+//	for (uint32_t i = 0; i < 8; i++)
+//	{
+//		/* Go forward if this parent cell has no child */ 
+//		if (!child_count[i]) continue;
+//
+//		/* Skip triangles that have been collapsed by simplification */
+//		/* We do that in place in blk_data, and update index_count   */
+//		uint32_t *idx = blk_data.indices + idx_offset[i];
+//		uint32_t new_idx_count = 0;
+//		for (uint32_t k = 0; k < idx_count[i]; k += 3)
+//		{
+//			uint32_t i0 = simp_remap[idx[k + 0]];
+//			uint32_t i1 = simp_remap[idx[k + 1]];
+//			uint32_t i2 = simp_remap[idx[k + 2]];
+//			if (i0 == i1 || i1 == i2 || i0 == i2) continue;
+//			idx[new_idx_count++] = i0;
+//			idx[new_idx_count++] = i1;
+//			idx[new_idx_count++] = i2;
+//		}
+//		idx_count[i] = new_idx_count;
+//	}
 
 	/* Split each parent cell mesh from the block and copy it back
 	 * to the mesh grid buffer data.
@@ -581,13 +599,13 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 		}
 		/* Perform the split */
 		join_mesh(pmesh, pdata, blk_mesh_part, blk_data, tmp_table, 
-				split_remap); 
+				split_remap);
+		//skip_degenerate_tris(pmesh, pdata);
 
 		/* Record children cells parent map */
 		uint32_t *src_idx = blk_remap.data + vtx_offset[i];
 		for (uint32_t j = 0; j < child_count[i]; ++j)
 		{
-			printf("Child %d\n", j);
 			const Mesh *cmesh = children[i][j];
 			uint32_t *tgt_idx = data.remap + cmesh->vertex_offset;
 			for (uint32_t k = 0; k < cmesh->vertex_count; k++)
@@ -597,7 +615,7 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 				{
 					printf("%d %d \n", tgt_idx[k], pmesh.vertex_count);
 				}
-				//assert(tgt_idx[k] < pmesh.vertex_count);
+				assert(tgt_idx[k] < pmesh.vertex_count);
 			}
 			src_idx += cmesh->vertex_count;
 		}

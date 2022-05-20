@@ -267,3 +267,20 @@ void compact_mesh(Mesh& mesh, MBuf& data, uint32_t *remap)
 	//remap_vertex_buffer(mesh, data, remap);
 	//mesh.vertex_count = vtx_num;	
 }
+
+void skip_degenerate_tris(Mesh &mesh, MBuf &data)
+{
+	uint32_t new_idx_count = 0;
+	uint32_t *idx = data.indices + mesh.index_offset;
+	for (uint32_t k = 0; k < mesh.index_count; k += 3)
+	{
+		uint32_t i0 = idx[k + 0];
+		uint32_t i1 = idx[k + 1];
+		uint32_t i2 = idx[k + 2];
+		if (i0 == i1 || i1 == i2 || i0 == i2) continue;
+		idx[new_idx_count++] = i0;
+		idx[new_idx_count++] = i1;
+		idx[new_idx_count++] = i2;
+	}
+	mesh.index_count = new_idx_count;
+}

@@ -4,7 +4,7 @@
 layout (location = 0) in vec3 _pos;
 layout (location = 1) in vec3 _nml;
 layout (location = 2) in vec2 _tex;
-layout (location = 3) in int  parent_idx;
+layout (location = 3) in int parent_idx;
 
 /* SSBO */
 layout(std430, binding = 1) restrict readonly buffer positions {float Pos[];};
@@ -35,15 +35,13 @@ void main()
 	vec3 nml = _nml;
 	if (continuous_lod)
 	{
-		float ratio = 0.5; /* TODO */
+		float ratio = 0.9; /* TODO */
 		uint j = 3 * (parent_idx +  parent_vtx_offset);
-		pos *= ratio;
-		pos += (1.0 - ratio) * vec3(Pos[j + 0], Pos[j + 1], Pos[j + 2]);
+		pos = ratio * _pos + (1.0 - ratio) * vec3(Pos[j + 0], Pos[j + 1], Pos[j + 2]);
 
 		if (smooth_shading)
 		{
-			nml *= ratio;
-			nml += (1.0 - ratio) * vec3(Nml[j + 0], Nml[j + 1], Nml[j + 2]);
+			nml = ratio * nml + (1.0 - ratio) * vec3(Nml[j + 0], Nml[j + 1], Nml[j + 2]);
 		}
 	}
 
