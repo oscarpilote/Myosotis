@@ -15,8 +15,11 @@ void compute_mesh_normals(const Mesh& mesh, MBuf& data);
 
 void concat_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d);
 
-void join_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf&	src_d, 
-	       VertexTable& vtx_table, uint32_t *remap = NULL);
+void join_mesh_from_indices(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, 
+		const MBuf& src_d, VertexTable& vtx_table, uint32_t *remap);
+
+void join_mesh_from_vertices(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, 
+		const MBuf& src_d, VertexTable& vtx_table, uint32_t *remap);
 
 void skip_degenerate_tris(Mesh &mesh, MBuf &data);
 
@@ -27,4 +30,7 @@ void copy_indices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
 
 void copy_vertices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
 		   size_t vtx_num, size_t vtx_off = 0);
+
+void copy_unique_vertices(MBuf& dst, size_t dst_off, const MBuf& src, 
+		uint32_t *vtx_idx, uint32_t vtx_count, VertexTable& vtx_table);
 

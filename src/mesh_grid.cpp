@@ -19,7 +19,7 @@
 #include "chrono.h"
 
 
-#define STRAIGHT_GROUPING 0
+#define STRAIGHT_GROUPING 1
 
 static inline
 void point_to_cell_coord(CellCoord& coord, const Vec3& p, const Vec3& base, 
@@ -600,7 +600,9 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 		/* Perform the split */
 		join_mesh(pmesh, pdata, blk_mesh_part, blk_data, tmp_table, 
 				split_remap);
-		//skip_degenerate_tris(pmesh, pdata);
+		printf("Before simpl : %d\n", pmesh.index_count);
+		skip_degenerate_tris(pmesh, pdata);
+		printf("After simpl : %d\n", pmesh.index_count);
 
 		/* Record children cells parent map */
 		uint32_t *src_idx = blk_remap.data + vtx_offset[i];

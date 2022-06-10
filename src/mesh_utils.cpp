@@ -176,6 +176,43 @@ void copy_vertices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
 	}
 }
 
+uint32_t select_unique_vertices(MBuf& dst_d, uint32_t dst_off, const MBuf& src_d, 
+		uint32_t *vtx_idx, uint32_t vtx_count, VertexTable& vtx_table)
+{
+	/* vtx_table should be based on dst_d */
+	assert(vtx_table.get_mesh_data() == &dst_d);
+
+	/* Source should have all attributes of target */
+	assert((dst_d.vtx_attr & src_d.vtx_attr) == dst_d.vtx_attr);
+
+	uint32_t new_vtx_count = 0;
+	for (size_t i = 0; i < vtx_count; ++i)
+	{
+		size_t vtx_off = dst_off + new_vtx_count;
+		copy_vertices(dst_d, vtx_off, src_d, vtx_idx[i], 1);
+		uint32_t *p;
+		p = vtx_table.get_or_set(dst_off, dst_m.vertex_count);
+		if (p)
+		{
+			idx[i] = *p;
+		}
+		else
+		{
+			idx[i] = dst_m.vertex_count;
+			dst_m.vertex_count++;
+		}
+		if (remap)
+		{
+			assert(src_idx < src_m.vertex_count);
+			remap[src_idx] = idx[i];
+		}
+	}
+	dst_m.index_count += src_m.index_count;
+
+
+}
+
+
 void concat_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d)
 {
 	/* Destination should have no more attributes than source */
@@ -204,7 +241,7 @@ void concat_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d)
 	dst_m.vertex_count = total_vertices;
 }
 
-void join_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d, 
+void join_mesh_from_indices(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d, 
 		VertexTable& vtx_table, uint32_t *remap)
 {
 	/* vtx_table should be based on dst_d */
@@ -236,6 +273,42 @@ void join_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d,
 			assert(src_idx < src_m.vertex_count);
 			remap[src_idx] = idx[i];
 		}
+	}
+	dst_m.index_count += src_m.index_count;
+}
+
+void join_mesh_from_vertices(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d, 
+		VertexTable& vtx_table, uint32_t *remap)
+{
+	/* vtx_table should be based on dst_d */
+	assert(vtx_table.get_mesh_data() == &dst_d);
+
+	/* Source should have all attributes of target */
+	assert((dst_d.vtx_attr & src_d.vtx_attr) == dst_d.vtx_attr);
+
+	for (size_t i = 0; i < src_m.vertex_count; ++i)
+	{
+		size_t dst_off = dst_m.vertex_offset + dst_m.vertex_count;
+		size_t src_off = src_m.vertex_offset + i;
+		copy_vertices(dst_d, dst_off, src_d, src_off, 1);
+		uint32_t *p;
+		p = vtx_table.get_or_set(dst_off, dst_m.vertex_count);
+		if (p)
+		{
+			remap[i] = *p;
+		}
+		else
+		{
+			remap[i] = dst_m.vertex_count;
+			dst_m.vertex_count++;
+		}
+	}
+	
+	uint32_t *dst_idx = dst_d.indices + dst_m.index_offset + dst_m.index_count;
+	uint32_t *src_idx = src_d.indices + src_m.index_offset;
+	for (size_t j = 0; j < src_m.index_count; ++j)
+	{
+		dst_idx[j] = remap[src_idx[j]];
 	}
 	dst_m.index_count += src_m.index_count;
 }

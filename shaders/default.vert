@@ -35,7 +35,7 @@ void main()
 	vec3 nml = _nml;
 	if (continuous_lod)
 	{
-		float ratio = 0.9; /* TODO */
+		float ratio = 1.0; /* TODO */
 		uint j = 3 * (parent_idx +  parent_vtx_offset);
 		pos = ratio * _pos + (1.0 - ratio) * vec3(Pos[j + 0], Pos[j + 1], Pos[j + 2]);
 
