@@ -430,14 +430,17 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 
 	/* For each parent cell in the block, the number of existing childs */
 	uint32_t child_count[8];
+	
 	/* For each parent cell in the block, the number of indices and
 	 * vertices prior to simplification */
 	uint32_t idx_count[8];
 	uint32_t vtx_count[8];
+	
 	/* For each parent cell in the block, its offsets in the index 
 	 * and vertex arrays. */
 	uint32_t idx_offset[8];
 	uint32_t vtx_offset[8];
+
 	/* Some maximums for allocation bounds */
 	uint32_t max_idx_count = 1;
 	uint32_t max_vtx_count = 1;
@@ -458,7 +461,6 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	/* Compute vtx and idx counts prior to simplification */
 	uint32_t total_idx_count = 0;
 	uint32_t total_vtx_count = 0;
-	printf("Counts:\n");
 	for (uint32_t i = 0; i < 8; i++)
 	{
 		idx_count[i] = 0;
@@ -478,9 +480,7 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 			idx_offset[i - 1] + idx_count[i - 1];
 		vtx_offset[i] = (i == 0) ? 0 :
 			vtx_offset[i - 1] + vtx_count[i - 1];
-		printf("%d %d %d %d\n", idx_offset[i], idx_count[i], vtx_offset[i], vtx_count[i]);
 	}
-	printf("Max %d %d Total %d %d\n", max_idx_count, max_vtx_count, total_idx_count, total_vtx_count);
 
 	/* Prepare tmp structures for simplification */
 	MBuf blk_data;
@@ -504,20 +504,16 @@ void MeshGrid::build_block(CellCoord bcoord, pthread_mutex_t* mutex)
 	{
 		for (uint32_t j = 0; j < child_count[i]; ++j)
 		{
-			//pthread_mutex_lock(mutex);
-			join_mesh(blk_mesh, blk_data, *children[i][j], data, 
-					tmp_table, tmp_remap);
-			//pthread_mutex_unlock(mutex);
+			// pthread_mutex_lock(mutex);
+			join_mesh_from_vertices(blk_mesh, blk_data, 
+				*children[i][j], data, tmp_table, tmp_remap);
+			// pthread_mutex_unlock(mutex);
 			tmp_remap += children[i][j]->vertex_count;
 		}
 	}
 	
 	for (uint32_t k = 0; k < total_vtx_count; k++)
 	{
-		if (blk_remap[k] >= blk_mesh.vertex_count)
-		{
-			printf("%d %d\n", blk_remap[k], blk_mesh.vertex_count);
-		}
 		assert(blk_remap[k] < blk_mesh.vertex_count);
 	}
 
