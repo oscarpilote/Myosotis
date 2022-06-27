@@ -67,11 +67,11 @@ struct MeshGrid {
 	MeshGrid(Vec3 base, float step, uint32_t levels);
 	Mesh* get_cell(CellCoord ccoord);
 	unsigned get_children(CellCoord pcoord, Mesh* children[8]);
-	void build_from_mesh(const MBuf& src, const Mesh& mesh);
+	void build_from_mesh(const MBuf& src, const Mesh& mesh, 
+			int num_threads = 4);
 	void init_from_mesh(const MBuf& src, const Mesh& mesh);
-	void build_level(uint32_t level);
+	void build_level(uint32_t level, uint8_t num_threads = 4);
 	void build_parent_cell(CellCoord pcoord);
-	void build_block(CellCoord bcoord, pthread_mutex_t* mutex);
 	void select_cells_from_view_point(Vec3 vp, float kappa, 
 			const float *pvm, TArray<uint32_t>& to_draw,
 			TArray<uint32_t>& parents);

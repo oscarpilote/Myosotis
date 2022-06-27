@@ -3,6 +3,9 @@
 #define POW2(x) ((x) * (x))
 #define POW3(x) ((x) * (x) * (x))
 
+#define MAX(A, B) ((B) > (A) ? (B) : (A))
+#define MIN(A, B) ((B) < (A) ? (B) : (A))
+
 #define CLAMP(x, low, high)  \
 	(((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 

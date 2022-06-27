@@ -176,8 +176,10 @@ void copy_vertices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
 	}
 }
 
-uint32_t select_unique_vertices(MBuf& dst_d, uint32_t dst_off, const MBuf& src_d, 
-		uint32_t *vtx_idx, uint32_t vtx_count, VertexTable& vtx_table)
+//#if 0
+uint32_t copy_unique_vertices(MBuf& dst_d, uint32_t dst_off, const MBuf& src_d, 
+		uint32_t *vtx_idx, uint32_t vtx_count, VertexTable& vtx_table,
+		uint32_t *remap)
 {
 	/* vtx_table should be based on dst_d */
 	assert(vtx_table.get_mesh_data() == &dst_d);
@@ -208,10 +210,8 @@ uint32_t select_unique_vertices(MBuf& dst_d, uint32_t dst_off, const MBuf& src_d
 		}
 	}
 	dst_m.index_count += src_m.index_count;
-
-
 }
-
+//#endif
 
 void concat_mesh(Mesh& dst_m, MBuf& dst_d, const Mesh& src_m, const MBuf& src_d)
 {
