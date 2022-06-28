@@ -333,7 +333,7 @@ void MeshGrid::init_from_mesh(const MBuf& src, const Mesh& mesh)
 		cells[cell_idx].index_count = 0;
 	}
 
-	/* Remap indices (and re-establish index counts) */
+	/* Reorder indices according to cells (and re-establish index counts) */
 	for (size_t tri_idx = 0; tri_idx < tri_count; ++tri_idx)
 	{
 		Mesh& cell = cells[tri_idx_to_cell_idx[tri_idx]];
@@ -367,8 +367,8 @@ void MeshGrid::init_from_mesh(const MBuf& src, const Mesh& mesh)
 			max_index_count = cells[cell_idx].index_count;
 		}
 	}
+	
 	HashTable<uint32_t, uint32_t> idx_remap(max_index_count); 	
-
 	size_t total_vertex_count = 0;
 	for (size_t cell_idx = 0; cell_idx < cells.size; ++cell_idx)
 	{
@@ -579,11 +579,11 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 			split_remap[l] = ~0;
 		}
 		/* Perform the split */
-		join_mesh_from_indices(pmesh, pdata, blk_mesh_part, blk_data, tmp_table, 
+		join_mesh_from_indices(pmesh, pdata, blk_mesh_part, blk_data, blk_table, 
 				split_remap);
-		printf("Before simpl : %d\n", pmesh.index_count);
-		skip_degenerate_tris(pmesh, pdata);
-		printf("After simpl : %d\n", pmesh.index_count);
+		//printf("Before simpl : %d\n", pmesh.index_count);
+		//skip_degenerate_tris(pmesh, pdata);
+		//printf("After simpl : %d\n", pmesh.index_count);
 
 		/* Record children cells parent map */
 		uint32_t *src_idx = blk_remap.data + vtx_offset[i];
