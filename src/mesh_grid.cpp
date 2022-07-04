@@ -562,7 +562,7 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 					blk_table, &split_remap[0]);
 
 		/* If at max_level, write our own parent as ourself */
-		if (bcoord.lod == mg.levels - 1)
+		if (bcoord.lod == (int16_t)(mg.levels - 1))
 		{
 			for (uint32_t i = 0; i < pmesh.vertex_count; ++i)
 			{

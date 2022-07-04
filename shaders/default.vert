@@ -44,7 +44,7 @@ void main()
 	if (continuous_lod)
 	{
 		float l = log2(norminf(camera_pos - pos) / kappa_times_step);
-		ratio = smoothstep(level + 0.3, level + 0.7, l);
+		ratio = smoothstep(level + 0.7, level + 0.9, l);
 		uint j = 3 * (parent_idx +  parent_vtx_offset);
 		pos = (1. - ratio) * _pos + ratio * vec3(Pos[j + 0], Pos[j + 1], Pos[j + 2]);
 

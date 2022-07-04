@@ -24,6 +24,19 @@ add_library(miniply
 	../extern/miniply/miniply.cpp
 	)
 
+add_library(meshoptimizer
+	../extern/meshoptimizer/src/allocator.cpp
+	../extern/meshoptimizer/src/indexgenerator.cpp
+	../extern/meshoptimizer/src/simplifier.cpp
+	../extern/meshoptimizer/src/simplifier_mod.cpp
+	../extern/meshoptimizer/src/overdrawanalyzer.cpp
+	../extern/meshoptimizer/src/overdrawoptimizer.cpp
+	../extern/meshoptimizer/src/vcacheanalyzer.cpp
+	../extern/meshoptimizer/src/vcacheoptimizer.cpp
+	../extern/meshoptimizer/src/vfetchanalyzer.cpp
+	../extern/meshoptimizer/src/vfetchoptimizer.cpp
+	)
+
 add_library(imgui_glfw_opengl3
 	../extern/imgui/imgui.cpp
 	../extern/imgui/imgui_draw.cpp
@@ -33,19 +46,20 @@ add_library(imgui_glfw_opengl3
 	../extern/imgui/imgui_impl_opengl3.cpp
 	)
 
-add_library(meshoptimizer STATIC IMPORTED)
-set_target_properties(meshoptimizer PROPERTIES
-	IMPORTED_LOCATION
-	"${CMAKE_SOURCE_DIR}/extern/meshoptimizer/build/libmeshoptimizer.a"
-	)
+
+#add_library(meshoptimizer STATIC IMPORTED)
+#set_target_properties(meshoptimizer PROPERTIES
+#	IMPORTED_LOCATION
+#	"${CMAKE_SOURCE_DIR}/extern/meshoptimizer/build/libmeshoptimizer.a"
+#	)
 
 target_compile_features(myosotis PRIVATE cxx_std_20)
 target_compile_options(myosotis PRIVATE -Wall -Wextra)
 target_link_libraries(myosotis miniply)
+target_link_libraries(myosotis meshoptimizer)
 target_link_libraries(myosotis imgui_glfw_opengl3)
 target_link_libraries(myosotis OpenGL)
 target_link_libraries(myosotis glfw)
 target_link_libraries(myosotis pthread)
 target_link_libraries(myosotis ${CMAKE_DL_LIBS})
-target_link_libraries(myosotis meshoptimizer)
 

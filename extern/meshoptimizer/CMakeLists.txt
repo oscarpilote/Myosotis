@@ -13,7 +13,7 @@ endif()
 
 project(meshoptimizer VERSION 0.17 LANGUAGES CXX)
 
-option(MESHOPT_BUILD_DEMO "Build demo" ON)
+option(MESHOPT_BUILD_DEMO "Build demo" OFF)
 option(MESHOPT_BUILD_GLTFPACK "Build gltfpack" OFF)
 option(MESHOPT_BUILD_SHARED_LIBS "Build shared libraries" OFF)
 

@@ -120,9 +120,8 @@ int main(int argc, char **argv)
 		{
 			max_level += 1;
 		}
-		printf("Maximum octree level unspecified. Using %d based\n",
-				max_level);
-		printf("on mesh index count.\n");
+		printf("Maximum octree level unspecified. Using %d based on\
+mesh index count.\n", max_level);
 
 	}
 	float step = model_size / (1 << max_level);
