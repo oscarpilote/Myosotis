@@ -73,7 +73,8 @@ GLint create_shader(const char *vs_path, const char *fs_path)
 	glGetProgramiv(prg, GL_LINK_STATUS, &success);
 	if (!success) 
 	{
-		printf("Failed to link shaders !\n");
+		glGetShaderInfoLog(frag, 512, NULL, infoLog);
+		printf("ERROR: linking failed !\n%s\n", infoLog);
 		return (exit_failure);
 	}
 	glDetachShader(prg, vert);

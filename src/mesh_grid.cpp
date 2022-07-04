@@ -476,7 +476,7 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 	TArray<uint32_t> blk_remap(total_vtx_count);
 	for (uint32_t l = 0; l < total_vtx_count; ++l)
 	{
-		blk_remap[l] = ~0;
+		blk_remap[l] = ~0u;
 	}
 
 	Mesh blk_mesh {0, 0, 0, 0};
@@ -527,66 +527,69 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 		assert(blk_remap[k] < blk_mesh.vertex_count);
 	}
 
-	/* Update parent cell mesh indices by skipping triangles that
-	 * have turned collapsed by simplification. */
-//	for (uint32_t i = 0; i < 8; i++)
-//	{
-//		/* Go forward if this parent cell has no child */ 
-//		if (!child_count[i]) continue;
-//
-//		/* Skip triangles that have been collapsed by simplification */
-//		/* We do that in place in blk_data, and update index_count   */
-//		uint32_t *idx = blk_data.indices + idx_offset[i];
-//		uint32_t new_idx_count = 0;
-//		for (uint32_t k = 0; k < idx_count[i]; k += 3)
-//		{
-//			uint32_t i0 = simp_remap[idx[k + 0]];
-//			uint32_t i1 = simp_remap[idx[k + 1]];
-//			uint32_t i2 = simp_remap[idx[k + 2]];
-//			if (i0 == i1 || i1 == i2 || i0 == i2) continue;
-//			idx[new_idx_count++] = i0;
-//			idx[new_idx_count++] = i1;
-//			idx[new_idx_count++] = i2;
-//		}
-//		idx_count[i] = new_idx_count;
-//	}
-
 	/* Split each parent cell mesh from the block and copy it back
-	 * to the mesh grid buffer data.
-	 * A second temp MBuf is allocated to spend less time inside mutex. */ 
-	
+	 * to the mesh grid buffer data. */
+
+	/* A second temp MBuf is allocated to spend less time inside mutex. */ 
 	MBuf pdata;
 	pdata.vtx_attr = mg.data.vtx_attr;
 	pdata.reserve_indices(max_idx_count);
 	pdata.reserve_vertices(max_vtx_count + 1);
+	/* We recycle blk_table for pdata */
+	blk_table.set_mesh_data(&pdata);
+	
+	TArray<uint32_t> split_remap(blk_mesh.vertex_count);
+	
 	for (uint32_t i = 0; i < 8; i++)
 	{
 		/* Go forward if this parent cell has no child */ 
 		if (!child_count[i]) continue;
 
 		Mesh pmesh {0, 0, 0, 0};
-		Mesh blk_mesh_part {idx_offset[i], idx_count[i], 
-						0, blk_mesh.vertex_count};
 		
-		/* We recycle blk_table */
-		blk_table.set_mesh_data(&pdata);
+		/* Cleat blk_table and split remap */
 		blk_table.clear();
-
-		/* We also recycle simp_remap array for split remap */
-		uint32_t *split_remap = simp_remap.data;
 		for (uint32_t l = 0; l < blk_mesh.vertex_count; ++l)
 		{
-			split_remap[l] = ~0;
+			split_remap[l] = ~0u;
 		}
-		/* Perform the split */
-		join_mesh_from_indices(pmesh, pdata, blk_mesh_part, blk_data, blk_table, 
-				split_remap);
-		//printf("Before simpl : %d\n", pmesh.index_count);
-		//skip_degenerate_tris(pmesh, pdata);
-		//printf("After simpl : %d\n", pmesh.index_count);
+		
+		/* Perform the split : */
 
-		/* Record children cells parent map */
-		uint32_t *src_idx = blk_remap.data + vtx_offset[i];
+		/* 1) Copy relevant vertices and fill split_remap */
+		pmesh.vertex_count = copy_unique_vertices(pdata, 0, blk_data, 
+					&blk_remap[vtx_offset[i]], vtx_count[i],
+					blk_table, &split_remap[0]);
+
+		/* If at max_level, write our own parent as ourself */
+		if (bcoord.lod == mg.levels - 1)
+		{
+			for (uint32_t i = 0; i < pmesh.vertex_count; ++i)
+			{
+				pdata.remap[i] = i;
+			}
+		}
+		
+		/* 2) Copy relevant indices, skipping triangles that have 
+		 *    been collapsed by simplification */
+		uint32_t p_idx_count = 0;
+		uint32_t *tri_idx = blk_data.indices + idx_offset[i];
+		for (uint32_t k = 0; k < idx_count[i]; k += 3)
+		{
+			uint32_t i0 = split_remap[tri_idx[k + 0]];
+			uint32_t i1 = split_remap[tri_idx[k + 1]];
+			uint32_t i2 = split_remap[tri_idx[k + 2]];
+			assert(i0 != ~0u && i1 != ~0u && i2 != ~0u); 
+			if (i0 == i1 || i1 == i2 || i0 == i2) continue;
+			pdata.indices[p_idx_count + 0] = i0;
+			pdata.indices[p_idx_count + 1] = i1;
+			pdata.indices[p_idx_count + 2] = i2;
+			p_idx_count += 3;
+		}
+		pmesh.index_count = p_idx_count;
+
+		/* 3) Record children cells parent map */
+		uint32_t *src_idx = &blk_remap[vtx_offset[i]];
 		for (uint32_t j = 0; j < child_count[i]; ++j)
 		{
 			const Mesh *cmesh = children[i][j];
@@ -594,10 +597,6 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 			for (uint32_t k = 0; k < cmesh->vertex_count; k++)
 			{
 				tgt_idx[k] = split_remap[src_idx[k]];
-				if (tgt_idx[k] >= pmesh.vertex_count)
-				{
-					printf("%d %d \n", tgt_idx[k], pmesh.vertex_count);
-				}
 				assert(tgt_idx[k] < pmesh.vertex_count);
 			}
 			src_idx += cmesh->vertex_count;

@@ -31,6 +31,7 @@ void copy_indices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
 void copy_vertices(MBuf& dst, size_t dst_off, const MBuf& src, size_t src_off,
 		   size_t vtx_num, size_t vtx_off = 0);
 
-void copy_unique_vertices(MBuf& dst, size_t dst_off, const MBuf& src, 
-		uint32_t *vtx_idx, uint32_t vtx_count, VertexTable& vtx_table);
+uint32_t copy_unique_vertices(MBuf& dst_d, uint32_t dst_off, const MBuf& src_d, 
+		uint32_t *vtx_idx, uint32_t vtx_count, VertexTable& vtx_table,
+		uint32_t *remap);
 

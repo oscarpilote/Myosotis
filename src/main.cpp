@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 	float step = model_size / (1 << max_level);
 	Vec3 base = bbox.min;
 	MeshGrid mg(base, step, max_level);
-	mg.build_from_mesh(data, mesh);
+	mg.build_from_mesh(data, mesh, 8);
 	timer_stop("split_mesh_with_grid");
 
 	/* Dispose original mesh */
@@ -238,12 +238,12 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	
-	GLint fetch_mesh_prg = create_shader("./shaders/fetch_mesh.vert", 
-					  "./shaders/default.frag");
-	if (fetch_mesh_prg < 0) 
-	{
-		return EXIT_FAILURE;
-	}
+	//GLint fetch_mesh_prg = create_shader("./shaders/fetch_mesh.vert", 
+	//				  "./shaders/default.frag");
+	//if (fetch_mesh_prg < 0) 
+	//{
+	//	return EXIT_FAILURE;
+	//}
 	
 	//GLint nml_prg = create_shader("./shaders/face_normals.vert", 
 	//				  "./shaders/face_normals.frag");
@@ -275,7 +275,6 @@ int main(int argc, char **argv)
 		if (app.cfg.wireframe_mode)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			app.cfg.smooth_shading = true;
 		}
 		else
 		{
@@ -318,8 +317,9 @@ int main(int argc, char **argv)
 			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
 			glUniform3fv(2, 1, &camera_pos[0]);
 			glUniform1i(3, app.cfg.continuous_lod);
-			glUniform1i(4, app.cfg.smooth_shading);
+			glUniform1i(4, app.cfg.wireframe_mode || app.cfg.smooth_shading);
 			glUniform1i(5, app.cfg.colorize_lod);
+			glUniform1f(6, app.cfg.kappa * mg.step);
 			
 			
 			app.stat.drawn_tris = 0;
@@ -329,9 +329,9 @@ int main(int argc, char **argv)
 				Mesh& mesh = mg.cells[to_draw[i]];
 				Mesh& pmesh = mg.cells[parents[i]];
 				CellCoord coord =  mg.cell_coords[to_draw[i]];
-				glUniform1i(6, coord.lod);
-				glUniform1i(7, mesh.vertex_offset);
-				glUniform1i(8, pmesh.vertex_offset);
+				glUniform1i(7, coord.lod);
+				glUniform1i(8, mesh.vertex_offset);
+				glUniform1i(9, pmesh.vertex_offset);
 				glDrawElementsBaseVertex(GL_TRIANGLES, 
 					mesh.index_count, 
 					GL_UNSIGNED_INT, 
@@ -351,7 +351,10 @@ int main(int argc, char **argv)
 			glUniformMatrix4fv(0, 1, 0, &(vm.cols[0][0])); 
 			glUniformMatrix4fv(1, 1, 0, &(proj.cols[0][0]));
 			glUniform3fv(2, 1, &camera_pos[0]);
-			glUniform1i(3, app.cfg.smooth_shading);
+			glUniform1i(3, 0); /* No continuous LOD is fixed LOD mode */
+			glUniform1i(4, app.cfg.wireframe_mode || app.cfg.smooth_shading);
+			glUniform1i(5, app.cfg.colorize_lod);
+			glUniform1f(6, app.cfg.kappa * mg.step); /* Useless */
 			int cell_counts = mg.cell_counts[app.cfg.level];
 			int cell_offset = mg.cell_offsets[app.cfg.level];
 

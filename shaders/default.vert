@@ -17,31 +17,40 @@ layout (location = 1) uniform mat4 proj;
 layout (location = 2) uniform vec3 camera_pos;
 layout (location = 3) uniform bool continuous_lod;
 layout (location = 4) uniform bool smooth_shading;
+layout (location = 6) uniform float kappa_times_step;
 
 /* Uniform variables (cell dependent) */
-layout (location = 6) uniform int  level;
-layout (location = 7) uniform int  vtx_offset;
-layout (location = 8) uniform int  parent_vtx_offset;
+layout (location = 7) uniform int  level;
+layout (location = 8) uniform int  vtx_offset;
+layout (location = 9) uniform int  parent_vtx_offset;
 
 
 /* Out variables */
 layout (location = 0) out vec3 N;  /* Normal vector */
 layout (location = 1) out vec3 V;  /* View vector   */
 layout (location = 2) out vec3 L;  /* Light vector  */
+layout (location = 3) out float ratio;  /* Morphing param  */
+
+float norminf(vec3 v)
+{
+	return max(max(abs(v.x), abs(v.y)), abs(v.z));
+}
 
 void main() 
 {
 	vec3 pos = _pos;
 	vec3 nml = _nml;
+	ratio = 0.0;
 	if (continuous_lod)
 	{
-		float ratio = 1.0; /* TODO */
+		float l = log2(norminf(camera_pos - pos) / kappa_times_step);
+		ratio = smoothstep(level + 0.3, level + 0.7, l);
 		uint j = 3 * (parent_idx +  parent_vtx_offset);
-		pos = ratio * _pos + (1.0 - ratio) * vec3(Pos[j + 0], Pos[j + 1], Pos[j + 2]);
+		pos = (1. - ratio) * _pos + ratio * vec3(Pos[j + 0], Pos[j + 1], Pos[j + 2]);
 
 		if (smooth_shading)
 		{
-			nml = ratio * nml + (1.0 - ratio) * vec3(Nml[j + 0], Nml[j + 1], Nml[j + 2]);
+			nml = (1. - ratio) * nml + ratio * vec3(Nml[j + 0], Nml[j + 1], Nml[j + 2]);
 		}
 	}
 

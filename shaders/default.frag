@@ -4,13 +4,14 @@
 layout (location = 0) in vec3 _N;  /* Normal vector */
 layout (location = 1) in vec3 _V;  /* View vector   */
 layout (location = 2) in vec3 _L;  /* Light vector  */
+layout (location = 3) in float ratio;  /* Morphing param  */
 
 /* Uniform variables (cell independent) */
 layout (location = 4) uniform bool smooth_shading;
 layout (location = 5) uniform bool colorize_lod;
 
 /* Uniform variables (cell dependent) */
-layout (location = 6) uniform int level;
+layout (location = 7) uniform int level;
 
 // Out color
 layout (location = 0) out vec4 color;
@@ -57,16 +58,36 @@ void main()
 		Is = pow(ca, shininess) * shininess / 4;
 	}
 
-
-	vec3 full = Ka * AMBIENT_COLOR;
-
-	full     += Kd * Id * DIFFUSE_COLOR;
-	full     += Ks * Is * SPECULAR_COLOR;
-	color = vec4(full, 1.0f);
+	vec3 full = vec3(0.);
+	
 	if (colorize_lod)
 	{
-		if (level == 0) {color.r *= (0.5f);}
-		if (level == 1) {color.g *= (0.5f);}
-		if (level == 2) {color.b *= (0.5f);}
+		float l = level + ratio;
+		vec3 c;
+		float lg = 3.0;
+		if (l < 1) 
+		{
+			c.r = 1 - l;
+			c.g = l;
+		}
+		else if (l < 2)
+		{
+			c.g = 2 - l;
+			c.b = l - 1;
+		}
+		else
+		{
+			c.r = smoothstep(2, 6, l);
+			c.b = 1.0 - c.r;
+		}
+		full += (Ka + Kd * Id + Ks * Is) * c;
 	}
+	else
+	{
+		full += Ka * AMBIENT_COLOR;
+		full += Kd * Id * DIFFUSE_COLOR;
+		full += Ks * Is * SPECULAR_COLOR;
+	}
+
+	color = vec4(full, 1.0f);
 }

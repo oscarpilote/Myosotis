@@ -180,8 +180,8 @@ uint32_t copy_unique_vertices(MBuf& dst_d, uint32_t dst_off, const MBuf& src_d,
 		uint32_t *vtx_idx, uint32_t vtx_count, VertexTable& vtx_table,
 		uint32_t *remap)
 {
-	/* vtx_table should be based on dst_d */
-	assert(vtx_table.get_mesh_data() == &dst_d);
+	/* vtx_table should be based on dst_d and cleared */
+	assert(vtx_table.get_mesh_data() == &dst_d && vtx_table.size() == 0);
 
 	/* Source should have all attributes of target */
 	assert((dst_d.vtx_attr & src_d.vtx_attr) == dst_d.vtx_attr);
@@ -192,14 +192,14 @@ uint32_t copy_unique_vertices(MBuf& dst_d, uint32_t dst_off, const MBuf& src_d,
 		size_t vtx_off = dst_off + new_vtx_count;
 		copy_vertices(dst_d, vtx_off, src_d, vtx_idx[i], 1);
 		uint32_t *p;
-		p = vtx_table.get_or_set(dst_off, vtx_table.size());
+		p = vtx_table.get_or_set(vtx_off, new_vtx_count);
 		if (p)
 		{
-			remap[i] = *p;
+			remap[vtx_idx[i]] = *p;
 		}
 		else
 		{
-			remap[i] = vtx_table.size() - 1;
+			remap[vtx_idx[i]] = new_vtx_count;
 			new_vtx_count++;
 		}
 	}
