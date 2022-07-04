@@ -4,14 +4,14 @@
 layout (location = 0) in vec3 _N;  /* Normal vector */
 layout (location = 1) in vec3 _V;  /* View vector   */
 layout (location = 2) in vec3 _L;  /* Light vector  */
-layout (location = 3) in float ratio;  /* Morphing param  */
+layout (location = 3) in float lambda;  /* Morphing param  */
 
 /* Uniform variables (cell independent) */
 layout (location = 4) uniform bool smooth_shading;
 layout (location = 5) uniform bool colorize_lod;
 
 /* Uniform variables (cell dependent) */
-layout (location = 7) uniform int level;
+layout (location = 8) uniform int level;
 
 // Out color
 layout (location = 0) out vec4 color;
@@ -62,8 +62,8 @@ void main()
 	
 	if (colorize_lod)
 	{
-		float l = level + ratio;
-		vec3 c;
+		float l = level + (1 - lambda);
+		vec3 c = vec3(0, 0, 0);
 		float lg = 3.0;
 		if (l < 1) 
 		{

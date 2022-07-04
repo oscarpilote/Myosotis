@@ -135,12 +135,12 @@ bool Myosotis::new_frame()
 		glfwSwapInterval(cfg.vsync);	
 	}
 	
-	if (ImGui::DragFloat("FOV", &cfg.camera_fov, 1, 1, 120, "%.0f"))
+	if (ImGui::DragFloat("FOV", &cfg.camera_fov, 1, 5, 120, "%.0f"))
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}
 	
-	if (ImGui::DragFloat("kappa", &cfg.kappa, 0.1, 2, 50, "%.1f"))
+	if (ImGui::DragFloat("kappa", &cfg.kappa, 0.1, 1.5, 10, "%.1f"))
 	{
 		viewer.camera.set_fov(cfg.camera_fov);
 	}

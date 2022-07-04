@@ -318,7 +318,8 @@ mesh index count.\n", max_level);
 			glUniform1i(3, app.cfg.continuous_lod);
 			glUniform1i(4, app.cfg.wireframe_mode || app.cfg.smooth_shading);
 			glUniform1i(5, app.cfg.colorize_lod);
-			glUniform1f(6, app.cfg.kappa * mg.step);
+			glUniform1f(6, app.cfg.kappa);
+			glUniform1f(7, mg.step);
 			
 			
 			app.stat.drawn_tris = 0;
@@ -328,9 +329,9 @@ mesh index count.\n", max_level);
 				Mesh& mesh = mg.cells[to_draw[i]];
 				Mesh& pmesh = mg.cells[parents[i]];
 				CellCoord coord =  mg.cell_coords[to_draw[i]];
-				glUniform1i(7, coord.lod);
-				glUniform1i(8, mesh.vertex_offset);
-				glUniform1i(9, pmesh.vertex_offset);
+				glUniform1i(8, coord.lod);
+				glUniform1i(9, mesh.vertex_offset);
+				glUniform1i(10, pmesh.vertex_offset);
 				glDrawElementsBaseVertex(GL_TRIANGLES, 
 					mesh.index_count, 
 					GL_UNSIGNED_INT, 
@@ -353,7 +354,6 @@ mesh index count.\n", max_level);
 			glUniform1i(3, 0); /* No continuous LOD is fixed LOD mode */
 			glUniform1i(4, app.cfg.wireframe_mode || app.cfg.smooth_shading);
 			glUniform1i(5, app.cfg.colorize_lod);
-			glUniform1f(6, app.cfg.kappa * mg.step); /* Useless */
 			int cell_counts = mg.cell_counts[app.cfg.level];
 			int cell_offset = mg.cell_offsets[app.cfg.level];
 
