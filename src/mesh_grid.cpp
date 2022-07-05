@@ -123,18 +123,9 @@ static CellCoord block_base_coord(const CellCoord coord)
 {
 	CellCoord base;
 	base.lod = coord.lod;
-	if (coord.lod & 1) /* odd levels */
-	{
-		base.x = coord.x & 0xFFFE;
-		base.y = coord.y & 0xFFFE;
-		base.z = coord.z & 0xFFFE;
-	}
-	else /* even levels */
-	{
-		base.x = ((coord.x + 1) & 0xFFFE) - 1;
-		base.y = ((coord.y + 1) & 0xFFFE) - 1;
-		base.z = ((coord.z + 1) & 0xFFFE) - 1;
-	}
+	base.x = ((coord.x + 1) & 0xFFFE) - 1;
+	base.y = ((coord.y + 1) & 0xFFFE) - 1;
+	base.z = ((coord.z + 1) & 0xFFFE) - 1;
 	return base;
 }
 
