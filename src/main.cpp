@@ -26,7 +26,8 @@
 #include "shaders.h"
 #include "myosotis.h"
 
-#define TARGET_CELL_IDX_COUNT 10000 
+#define TARGET_CELL_IDX_COUNT 10000
+#define ERR_TOL 0.01
 
 void syntax(char *argv[])
 {
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
 	timer_stop("loading mesh");
 
 	/* Input mesh stat and optimization */
-	if (argc > 3 && *argv[3] == '1')
+	if (argc > 4 && *argv[4] == '1')
 	{
 		timer_start();
 		meshopt_statistics("Raw", data, mesh);
@@ -124,9 +125,18 @@ int main(int argc, char **argv)
 mesh index count.\n", max_level);
 
 	}
+	float err_tol;
+	if (argc > 3)
+	{
+		err_tol = atof(argv[3]);
+	}
+	else
+	{
+		err_tol = ERR_TOL;
+	}
 	float step = model_size / (1 << max_level);
 	Vec3 base = bbox.min;
-	MeshGrid mg(base, step, max_level);
+	MeshGrid mg(base, step, max_level, err_tol);
 	mg.build_from_mesh(data, mesh, 8);
 	timer_stop("split_mesh_with_grid");
 

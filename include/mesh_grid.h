@@ -60,11 +60,12 @@ struct MeshGrid {
 	TArray<Mesh> cells;
 	/* Facilities to access or query meshlets */
 	uint32_t levels;
+	float err_tol;
 	TArray<uint32_t> cell_offsets;
 	TArray<uint32_t> cell_counts;
 	CellTable cell_table;
 	/* Methods */
-	MeshGrid(Vec3 base, float step, uint32_t levels);
+	MeshGrid(Vec3 base, float step, uint32_t levels, float err_tol);
 	Mesh* get_cell(CellCoord ccoord);
 	unsigned get_children(CellCoord pcoord, Mesh* children[8]);
 	void build_from_mesh(const MBuf& src, const Mesh& mesh, 

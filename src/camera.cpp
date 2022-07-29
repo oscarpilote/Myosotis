@@ -275,10 +275,10 @@ int is_visible(const Aabb& bbox, const float *pvm)
 	float T, W;
 	
 	for (int i = 0; i < 8; ++i) {
-		
-		float x = (i & 1) ? bbox.min.x : bbox.max.x;
-		float y = (i & 2) ? bbox.min.y : bbox.max.y;
-		float z = (i & 4) ? bbox.min.z : bbox.max.z;
+
+		float x = (i & 1) ? (bbox.min.x) : (bbox.max.x);
+		float y = (i & 2) ? (bbox.min.y) : (bbox.max.y);
+		float z = (i & 4) ? (bbox.min.z) : (bbox.max.z);
 
 		W = pvm[3] * x + pvm[7] * y + pvm[11] * z + pvm[15];
 		T = pvm[0] * x + pvm[4] * y + pvm[8] * z + pvm[12];

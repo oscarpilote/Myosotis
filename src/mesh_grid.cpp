@@ -81,10 +81,11 @@ unsigned MeshGrid::get_children(CellCoord pcoord, Mesh* children[8])
 	return child_count;
 }
 
-MeshGrid::MeshGrid(Vec3 base, float step, uint32_t max_level): 
+MeshGrid::MeshGrid(Vec3 base, float step, uint32_t max_level, float err_tol): 
 	base{base},
 	step{step},
 	levels{max_level + 1},
+	err_tol{err_tol},
 	cell_offsets(levels),
 	cell_counts(levels), 
 	cell_table(1 << (2 * levels + 4))
@@ -256,6 +257,8 @@ void MeshGrid::build_from_mesh(const MBuf& src, const Mesh& mesh, int num_thread
 		builder.build_level(level);
 		printf("Number of cells at level %d : %d\n", level, 
 				cell_counts[level]);
+		printf("Number of triangles at level %d  : %d (ratio : %f)\n", level, 
+				get_triangle_count(level), (float)get_triangle_count(level) / get_triangle_count(level - 1)) ;
 	}
 }
 
@@ -494,11 +497,12 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 
 	TArray<uint32_t> simp_remap(blk_mesh.vertex_count);
 	TArray<uint32_t> trash(blk_mesh.index_count);
+	float target_err = mg.err_tol * mg.step * mg.levels * bcoord.lod;
 	meshopt_simplify_mod(
 			trash.data, simp_remap.data, blk_data.indices, 
 			blk_mesh.index_count, (const float*)blk_data.positions, 
 			blk_mesh.vertex_count, 3 * sizeof(float), 
-			blk_mesh.index_count / 4, 1, NULL);
+			blk_mesh.index_count / 4, target_err, NULL);
 
 	/* Update blk_mesh indices after simplification */
 	
