@@ -21,7 +21,7 @@ struct TRigT {
 	TRigT    inv() const;
 	TMat4<T> as_matrix() const;
 
-	static constexpr TRigT Identity = {TQuat<T>::Identity, TVec3<T>::Zero};
+	static inline TRigT Identity = {TQuat<T>::Identity, TVec3<T>::Zero};
 };
 typedef TRigT<float> RigT;
 

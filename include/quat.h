@@ -25,7 +25,7 @@ struct alignas(4 * sizeof(T)) TQuat {
 	constexpr TQuat(TVec3<T> xyz, T w);
 
 	/* Static Helpers */
-	static constexpr TQuat Identity {TVec3<T>::Zero, 1};
+	static inline TQuat Identity {TVec3<T>::Zero, 1};
 
 	/* Operator and Methods */
 	TQuat& operator*= (const TQuat& a);

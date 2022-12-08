@@ -30,9 +30,9 @@ struct TVec2 {
 	TVec2& operator/= (const T& t);
 
 	/* Static members */
-	static constexpr TVec2<T> Zero   {0, 0};
-	static constexpr TVec2<T> XAxis  {1, 0};
-	static constexpr TVec2<T> YAxis  {0, 1};
+	static inline TVec2<T> Zero   {0, 0};
+	static inline TVec2<T> XAxis  {1, 0};
+	static inline TVec2<T> YAxis  {0, 1};
 };
 
 typedef TVec2<float> Vec2;

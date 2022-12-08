@@ -24,11 +24,11 @@ static inline
 void point_to_cell_coord(CellCoord& coord, const Vec3& p, const Vec3& base, 
 		float inv_step)
 {
-	Vec3 float_coord = (p - base) * inv_step;
+	Vec3 my_test = (p - base) * inv_step;
 	
-	coord.x = floor(float_coord.x);
-	coord.y = floor(float_coord.y);
-	coord.z = floor(float_coord.z);
+	coord.x = floor(my_test.x);
+	coord.y = floor(my_test.y);
+	coord.z = floor(my_test.z);
 }
 
 CellCoord parent_coord(const CellCoord coord)
@@ -497,7 +497,7 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 
 	TArray<uint32_t> simp_remap(blk_mesh.vertex_count);
 	TArray<uint32_t> trash(blk_mesh.index_count);
-	float target_err = mg.err_tol * mg.step * mg.levels * bcoord.lod;
+	float target_err = mg.err_tol * mg.step * (1 << bcoord.lod);
 	meshopt_simplify_mod(
 			trash.data, simp_remap.data, blk_data.indices, 
 			blk_mesh.index_count, (const float*)blk_data.positions, 

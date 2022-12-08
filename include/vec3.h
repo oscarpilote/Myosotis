@@ -31,10 +31,10 @@ struct TVec3 {
 	TVec3& operator/= (const T& t);
 
 	/* Static members */
-	static constexpr TVec3<T> Zero   {0, 0, 0};
-	static constexpr TVec3<T> XAxis  {1, 0, 0};
-	static constexpr TVec3<T> YAxis  {0, 1, 0};
-	static constexpr TVec3<T> ZAxis  {0, 0, 1};
+	static inline TVec3<T> Zero   {0, 0, 0};
+	static inline TVec3<T> XAxis  {1, 0, 0};
+	static inline TVec3<T> YAxis  {0, 1, 0};
+	static inline TVec3<T> ZAxis  {0, 0, 1};
 };
 
 typedef TVec3<float> Vec3;

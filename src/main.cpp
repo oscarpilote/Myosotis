@@ -27,7 +27,7 @@
 #include "myosotis.h"
 
 #define TARGET_CELL_IDX_COUNT 10000
-#define ERR_TOL 0.01
+#define ERR_TOL 0.0005
 
 void syntax(char *argv[])
 {
@@ -43,8 +43,8 @@ int main(int argc, char **argv)
 	}
 	
 	/* Load and process mesh to build mesh_grid */
+	
 	timer_start();
-
 	
 	MBuf data;
 	Mesh mesh;
@@ -69,16 +69,18 @@ int main(int argc, char **argv)
 		}
 		else 
 		{
-			printf("Unsupported (yet) file type extension: %s\n", ext);
+			printf("Unsupported file type extension: %s\n", ext);
 			return (EXIT_FAILURE);
 		}
 	}
 	
-	printf("Triangles : %d Vertices : %d\n", mesh.index_count / 3,
-			mesh.vertex_count);
+	printf("Triangles : %d Vertices : %d\n",
+			mesh.index_count / 3, mesh.vertex_count);
+
 	timer_stop("loading mesh");
 
 	/* Input mesh stat and optimization */
+	
 	if (argc > 4 && *argv[4] == '1')
 	{
 		timer_start();
@@ -90,6 +92,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Computing mesh normals */
+	
 	if (!(data.vtx_attr & VtxAttr::NML))
 	{
 		timer_start();
@@ -99,15 +102,20 @@ int main(int argc, char **argv)
 	}
 
 	/* Computing mesh bounds */
+	
 	timer_start();
+	
 	Aabb bbox = compute_mesh_bounds(mesh, data);
 	Vec3 model_center = (bbox.min + bbox.max) * 0.5f;
 	Vec3 model_extent = (bbox.max - bbox.min);
 	float model_size = max(model_extent);
+	
 	timer_stop("compute_mesh_bounds");
 
 	/* Building mesh_grid */
+	
 	timer_start();
+	
 	int max_level;
 	if (argc > 2)
 	{
@@ -121,8 +129,8 @@ int main(int argc, char **argv)
 		{
 			max_level += 1;
 		}
-		printf("Maximum octree level unspecified. Using %d based on\
-mesh index count.\n", max_level);
+		printf("Maximum octree level unspecified. Using %d based"
+				"on mesh index count.\n", max_level);
 
 	}
 	float err_tol;
@@ -138,12 +146,15 @@ mesh index count.\n", max_level);
 	Vec3 base = bbox.min;
 	MeshGrid mg(base, step, max_level, err_tol);
 	mg.build_from_mesh(data, mesh, 8);
+	
 	timer_stop("split_mesh_with_grid");
 
 	/* Dispose original mesh */
+	
 	data.clear();
 
 	/* Main window and context */
+	
 	Myosotis app;
 	
 	if (!app.init(1920, 1080))
@@ -152,13 +163,13 @@ mesh index count.\n", max_level);
 	}
 
 	/* Init camera position */	
+	
 	app.viewer.target = model_center;
 	Vec3 start_pos = (model_center + 2.f * Vec3(0, 0, model_size));
 	app.viewer.camera.set_position(start_pos);
 	app.viewer.camera.set_near(0.001 * model_size);
 	app.viewer.camera.set_far(100 * model_size);
 	
-
 	glEnable(GL_DEBUG_OUTPUT);
 
 	/* Upload mesh grid */	
@@ -167,6 +178,8 @@ mesh index count.\n", max_level);
 	GLuint mg_idx;
 	glGenBuffers(1, &mg_idx);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_idx);
+	printf("Reserving %zu Mb for %zu triangles.\n", mg.data.idx_capacity * sizeof(uint32_t) / 1024, mg.data.idx_capacity / 3);
+	printf("Total triangles : %d\n", mg.next_index_offset / 3);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
 		mg.data.idx_capacity * sizeof(uint32_t),
 		mg.data.indices,
@@ -177,6 +190,8 @@ mesh index count.\n", max_level);
 	GLuint mg_pos;
 	glGenBuffers(1, &mg_pos);
 	glBindBuffer(GL_ARRAY_BUFFER, mg_pos);
+	printf("Reserving %zu Mb for %zu positions.\n", mg.data.vtx_capacity * sizeof(Vec3) / 1024, mg.data.vtx_capacity);
+	printf("Total vertices : %d\n", mg.next_vertex_offset);
 	glBufferData(GL_ARRAY_BUFFER,
 			mg.data.vtx_capacity * sizeof(Vec3),
 			mg.data.positions,
@@ -187,6 +202,7 @@ mesh index count.\n", max_level);
 	GLuint mg_nml;
 	glGenBuffers(1, &mg_nml);
 	glBindBuffer(GL_ARRAY_BUFFER, mg_nml);
+	printf("Reserving %zu Mb for normals.\n", mg.data.vtx_capacity * sizeof(Vec3) / 1024);
 	glBufferData(GL_ARRAY_BUFFER,
 			mg.data.vtx_capacity * sizeof(Vec3),
 			mg.data.normals,
@@ -197,6 +213,7 @@ mesh index count.\n", max_level);
 	GLuint mg_par;
 	glGenBuffers(1, &mg_par);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_par);
+	printf("Reserving %zu Mb for parents.\n", mg.data.vtx_capacity * sizeof(uint32_t) / 1024);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
 		mg.data.vtx_capacity * sizeof(uint32_t),
 		mg.data.remap,
@@ -218,7 +235,7 @@ mesh index count.\n", max_level);
 				(void *)0);
 	glEnableVertexAttribArray(1);
 	glBindBuffer(GL_ARRAY_BUFFER, mg_par);
-	glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, 1 * sizeof(GL_UNSIGNED_INT),
+	glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(GL_UNSIGNED_INT),
 				(void *)0);
 	glEnableVertexAttribArray(3);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_idx);
@@ -231,7 +248,7 @@ mesh index count.\n", max_level);
 	glGenVertexArrays(1, &fetch_vao);
 	glBindVertexArray(fetch_vao);
 	glBindBuffer(GL_ARRAY_BUFFER, mg_par);
-	glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, 1 * sizeof(GL_UNSIGNED_INT),
+	glVertexAttribIPointer(3, 1, GL_UNSIGNED_INT, sizeof(GL_UNSIGNED_INT),
 				(void *)0);
 	glEnableVertexAttribArray(3);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mg_idx);
