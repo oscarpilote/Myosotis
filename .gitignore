@@ -33,3 +33,15 @@
 *.exe
 *.out
 *.app
+
+# Build directories
+build/
+
+# Imgui
+imgui.ini
+
+# Compile commands
+compile_commands.json
+
+# Private dirs
+.*/
