@@ -9,11 +9,12 @@
 
 namespace VtxAttr {
 	enum {
-		POS = 0,
-		NML = 1 << 0,
-		UV0 = 1 << 1,
-		UV1 = 1 << 2,
-		MAP = 1 << 3,
+		None= 0, 
+		POS = 1 << 0,
+		NML = 1 << 1,
+		UV0 = 1 << 2,
+		UV1 = 1 << 3,
+		MAP = 1 << 4,
 		/* Some common combo */
 		P   = POS,
 		PN  = POS | NML,

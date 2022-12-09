@@ -93,6 +93,14 @@ int main(int argc, char **argv)
 
 	/* Computing mesh normals */
 	
+	switch(argc)
+	{
+		case 2:
+			printf("Coucou\n");
+		case 3:
+			printf("Salut\n");
+	}
+
 	if (!(data.vtx_attr & VtxAttr::NML))
 	{
 		timer_start();

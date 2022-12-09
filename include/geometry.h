@@ -69,7 +69,7 @@ TVec3<T> normal(const TVec3<T>& v1, const TVec3<T>& v2, const TVec3<T>& v3);
 template <typename T>
 TPlane<T> plane_from_normal_and_point(const TVec3<T>& normal, const TVec3<T>& point)
 {
-	return {normal, -dot(normal, point)};
+	return {{normal}, {-dot(normal, point)}};
 }
 
 template <typename T>
