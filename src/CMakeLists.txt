@@ -27,7 +27,6 @@ add_library(miniply
 add_library(meshoptimizer
 	../extern/meshoptimizer/src/allocator.cpp
 	../extern/meshoptimizer/src/indexgenerator.cpp
-	../extern/meshoptimizer/src/simplifier.cpp
 	../extern/meshoptimizer/src/simplifier_mod.cpp
 	../extern/meshoptimizer/src/overdrawanalyzer.cpp
 	../extern/meshoptimizer/src/overdrawoptimizer.cpp

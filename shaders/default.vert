@@ -27,9 +27,9 @@ layout (location = 10) uniform int  parent_vtx_offset;
 
 
 /* Out variables */
-layout (location = 0) out vec3 N;  /* Normal vector */
-layout (location = 1) out vec3 V;  /* View vector   */
-layout (location = 2) out vec3 L;  /* Light vector  */
+layout (location = 0) out vec3 N;        /* Normal vector  */
+layout (location = 1) out vec3 V;        /* View vector    */
+layout (location = 2) out vec3 L;        /* Light vector   */
 layout (location = 3) out float lambda;  /* Morphing param */
 
 float norminf(vec3 v)
