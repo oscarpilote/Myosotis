@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
 	/* Input mesh stat and optimization */
 	
-	if (argc > 4 && *argv[4] == '1')
+	if (argc > 2 && *argv[2] == '1')
 	{
 		timer_start();
 		meshopt_statistics("Raw", data, mesh);
@@ -93,14 +93,6 @@ int main(int argc, char **argv)
 
 	/* Computing mesh normals */
 	
-	switch(argc)
-	{
-		case 2:
-			printf("Coucou\n");
-		case 3:
-			printf("Salut\n");
-	}
-
 	if (!(data.vtx_attr & VtxAttr::NML))
 	{
 		timer_start();
@@ -125,9 +117,9 @@ int main(int argc, char **argv)
 	timer_start();
 	
 	int max_level;
-	if (argc > 2)
+	if (argc > 3)
 	{
-		max_level = atoi(argv[2]);
+		max_level = atoi(argv[3]);
 	}
 	else
 	{
@@ -142,9 +134,9 @@ int main(int argc, char **argv)
 
 	}
 	float err_tol;
-	if (argc > 3)
+	if (argc > 4)
 	{
-		err_tol = atof(argv[3]);
+		err_tol = atof(argv[4]);
 	}
 	else
 	{
@@ -326,17 +318,13 @@ int main(int argc, char **argv)
 		{
 			if (!app.cfg.freeze_vp)
 			{
-				Vec3 vp = app.viewer.camera.get_position();
-				float *pvm = NULL;
-				if (app.cfg.frustum_cull) 
-				{
-					Mat4 proj_vm = 
-						app.viewer.camera.world_to_clip();
-					pvm = &proj_vm(0,0);
-				}
+				Mat4 proj_vm = proj * vm;
+				float *pvm = app.cfg.frustum_cull ? 
+					&proj_vm(0,0)
+					: NULL;
 				to_draw.clear();
 				parents.clear();
-				mg.select_cells_from_view_point(vp, 
+				mg.select_cells_from_view_point(camera_pos, 
 					app.cfg.kappa, pvm, to_draw, parents);
 				app.stat.drawn_cells = to_draw.size;
 			}
