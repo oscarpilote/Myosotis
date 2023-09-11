@@ -53,7 +53,7 @@ add_library(imgui_glfw_opengl3
 #	)
 
 target_compile_features(myosotis PRIVATE cxx_std_17)
-target_compile_options(myosotis PRIVATE -Wall)
+target_compile_options(myosotis PRIVATE -Wall -Wextra)
 target_link_libraries(myosotis miniply)
 target_link_libraries(myosotis meshoptimizer)
 target_link_libraries(myosotis imgui_glfw_opengl3)

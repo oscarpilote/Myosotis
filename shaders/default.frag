@@ -9,9 +9,13 @@ layout (location = 3) in float lambda;  /* Morphing param  */
 /* Uniform variables (cell independent) */
 layout (location = 4) uniform bool smooth_shading;
 layout (location = 5) uniform bool colorize_lod;
+layout (location = 6) uniform bool colorize_cells;
 
 /* Uniform variables (cell dependent) */
-layout (location = 8) uniform int level;
+layout (location = 9)  uniform int  level;
+layout (location = 10) uniform int  cell_x;
+layout (location = 11) uniform int  cell_y;
+layout (location = 12) uniform int  cell_z;
 
 // Out color
 layout (location = 0) out vec4 color;
@@ -24,6 +28,17 @@ layout (location = 0) out vec4 color;
 #define SPECULAR_COLOR vec3(1.f, 1.f, 1.f)
 #define Ks 0.1f
 #define shininess 8
+
+const ivec3 cell_colors[8] = {
+	{120,28,129},
+	{64,67,153},
+	{72,139,194},
+	{107,178,140},
+	{159,190,87},
+	{210,179,63},
+	{231,126,49},
+	{217,33,32}
+};
 
 
 void main() 
@@ -80,6 +95,13 @@ void main()
 			c.r = smoothstep(2, 6, l);
 			c.b = 1.0 - c.r;
 		}
+		full += (Ka + Kd * Id + Ks * Is) * c;
+	}
+	else if (colorize_cells)
+	{
+		int idx = 31 * level + 7 * cell_x + 13 * cell_y + 17 * cell_z;
+		idx = idx & 7;
+		vec3 c = vec3(cell_colors[idx]) / 255.f;
 		full += (Ka + Kd * Id + Ks * Is) * c;
 	}
 	else

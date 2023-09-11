@@ -20,7 +20,7 @@ struct DefaultHasher {
 /* Uses OA and does _not_ implement deletion *
  * Hasher must implement hash, is_empty,     *
  * is_equal and empty.                       */
-template <typename K, typename V, typename H = DefaultHasher<K>>
+template <typename K, typename V, class H = DefaultHasher<K>>
 struct HashTable {
 public:
 	/* Methods */

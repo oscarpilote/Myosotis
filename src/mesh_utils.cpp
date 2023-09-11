@@ -33,6 +33,7 @@ Aabb compute_mesh_bounds(const Vec3* positions, size_t vertex_count)
 	return {min, max}; 
 }
 
+
 Aabb compute_mesh_bounds(const Mesh& mesh, const MBuf& data)
 {
 	const Vec3 *positions = data.positions + mesh.vertex_offset;

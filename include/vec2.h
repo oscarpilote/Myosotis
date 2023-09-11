@@ -23,7 +23,7 @@ struct TVec2 {
 	bool operator== (const TVec2<T>& a) const;
 
 	/* Vector space structure */
-	TVec2 operator- () const;
+	TVec2  operator- () const;
 	TVec2& operator+= (const TVec2& a);
 	TVec2& operator-= (const TVec2& a);
 	TVec2& operator*= (const T& t);

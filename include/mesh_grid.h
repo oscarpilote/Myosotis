@@ -2,11 +2,11 @@
 
 #include <stdint.h>
 
-#include "vec3.h"
 #include "array.h"
-#include "hash_table.h"
 #include "hash.h"
+#include "hash_table.h"
 #include "mesh.h"
+#include "vec3.h"
 
 union alignas(8) CellCoord {
 	struct {
@@ -54,10 +54,13 @@ struct MeshGrid {
 	float step;
 	/* Data holding meshlets */
 	MBuf data;
-	uint32_t next_index_offset  = 0;
+	uint32_t next_index_offset = 0;
 	uint32_t next_vertex_offset = 0;
+	/* Arrays, one entry per cell */
 	TArray<CellCoord> cell_coords;
 	TArray<Mesh> cells;
+	TArray<float> cell_errors;
+	float mean_relative_error;
 	/* Facilities to access or query meshlets */
 	uint32_t levels;
 	float err_tol;
@@ -66,19 +69,21 @@ struct MeshGrid {
 	CellTable cell_table;
 	/* Methods */
 	MeshGrid(Vec3 base, float step, uint32_t levels, float err_tol);
-	Mesh* get_cell(CellCoord ccoord);
-	unsigned get_children(CellCoord pcoord, Mesh* children[8]);
-	void build_from_mesh(const MBuf& src, const Mesh& mesh, 
-			int num_threads = 4);
-	void init_from_mesh(const MBuf& src, const Mesh& mesh);
+	Mesh *get_cell(CellCoord ccoord);
+	unsigned get_children(CellCoord pcoord, Mesh *children[8]);
+	void build_from_mesh(const MBuf &src, const Mesh &mesh,
+			     int num_threads = 4);
+	void init_from_mesh(const MBuf &src, const Mesh &mesh);
 	void build_level(uint32_t level, uint8_t num_threads = 4);
 	void build_parent_cell(CellCoord pcoord);
-	void select_cells_from_view_point(Vec3 vp, float kappa, 
-			const float *pvm, TArray<uint32_t>& to_draw,
-			TArray<uint32_t>& parents);
-	float cell_view_ratio(const Vec3 vp, CellCoord coord);
+	void compute_mean_relative_error();
+	void select_cells_from_view_point(Vec3 vp, float kappa,
+					  const float *pvm,
+					  TArray<uint32_t> &to_draw,
+					  TArray<uint32_t> &parents);
+	float cell_view_ratio_dinf(const Vec3 vp, CellCoord coord);
+	float cell_view_ratio_d2(const Vec3 vp, CellCoord coord);
 	uint32_t get_triangle_count(uint32_t level);
 	uint32_t get_vertex_count(uint32_t level);
-	
 };
 

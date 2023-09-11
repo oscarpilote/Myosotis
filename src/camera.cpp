@@ -30,6 +30,7 @@ Camera::Camera(float aspect_ratio, float fov, Fov axis)
 	}
 }
 
+
 Camera& Camera::set_aspect(float aspect_ratio, const Fov cst_axis)
 {
 
@@ -48,6 +49,7 @@ Camera& Camera::set_aspect(float aspect_ratio, const Fov cst_axis)
 
 Camera& Camera::set_fov(float fov, Fov axis)
 {
+	this->clip_to_world();
 	float aspect_ratio = frustum.aspect_y / frustum.aspect_x;
 	float focal_ratio = 1.f / tan(deg2rad(fov) / 2.f);
 
