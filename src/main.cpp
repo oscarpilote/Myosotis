@@ -26,7 +26,7 @@
 #include "version.h"
 #include "viewer.h"
 
-#define TARGET_CELL_IDX_COUNT (1 << 12)
+#define TARGET_CELL_IDX_COUNT (1 << 16)
 #define ERR_TOL 0.01
 
 void syntax(char *argv[])
@@ -273,21 +273,28 @@ int main(int argc, char **argv)
 
 			/* Set kappa */
 
-			float kappa =
-			    set_kappa(app.viewer.width, mg.mean_relative_error,
-				      app.cfg.pix_error, app.cfg.camera_fov);
+			float error_multiplier =
+			    2 * app.viewer.width /
+			    (app.cfg.pix_error *
+			     tan(app.cfg.camera_fov * PI / 360));
+
+			float kappa = error_multiplier * mg.mean_relative_error;
 
 			if (!app.cfg.freeze_vp) {
 				Vec3 vp = app.viewer.camera.get_position();
 				Mat4 proj_vm =
 				    app.viewer.camera.world_to_clip();
-				float *pvm = app.cfg.frustum_cull
-						 ? &proj_vm(0, 0)
-						 : NULL;
+				float *pvm = &proj_vm(0, 0);
 				to_draw.clear();
 				parents.clear();
+
+				// timer_start();
 				mg.select_cells_from_view_point(
-				    vp, kappa, pvm, to_draw, parents);
+				    vp, error_multiplier,
+				    app.cfg.continuous_lod,
+				    app.cfg.frustum_cull, pvm, to_draw,
+				    parents);
+				// timer_stop("Selection");
 				app.stat.drawn_cells = to_draw.size;
 			}
 

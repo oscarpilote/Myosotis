@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "array.h"
+#include "camera.h"
 #include "hash.h"
 #include "hash_table.h"
 #include "mesh.h"
@@ -72,13 +73,18 @@ struct MeshGrid {
 	Mesh *get_cell(CellCoord ccoord);
 	unsigned get_children(CellCoord pcoord, Mesh *children[8]);
 	void build_from_mesh(const MBuf &src, const Mesh &mesh,
-			     int num_threads = 4);
+			     int num_threads = 1);
 	void init_from_mesh(const MBuf &src, const Mesh &mesh);
-	void build_level(uint32_t level, uint8_t num_threads = 4);
+	void build_level(uint32_t level, uint8_t num_threads = 1);
 	void build_parent_cell(CellCoord pcoord);
 	void compute_mean_relative_error();
-	void select_cells_from_view_point(Vec3 vp, float kappa,
-					  const float *pvm,
+	enum Visibility get_visibility(const float *pvm, CellCoord coord);
+	bool cell_is_acceptable(const Vec3 &vp, uint32_t idx,
+				bool continuous_lod, float error_multiplier);
+	void select_cells_from_view_point(const Vec3 &vp,
+					  float error_multiplier,
+					  bool continuous_lod,
+					  bool frustum_cull, const float *pvm,
 					  TArray<uint32_t> &to_draw,
 					  TArray<uint32_t> &parents);
 	float cell_view_ratio_dinf(const Vec3 vp, CellCoord coord);

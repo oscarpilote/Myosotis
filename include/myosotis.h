@@ -19,6 +19,7 @@ struct MyosotisCfg {
 	int level = 0;
 	float pix_error = 2;
 	ImVec4 clear_color = ImVec4(0.25f, 0.22f, 0.15f, 1.00f);
+	// ImVec4 clear_color = ImVec4(0.8f, 0.8f, 0.95f, 1.00f);
 };
 
 struct MyosotisStats {
@@ -33,6 +34,7 @@ struct Myosotis {
 	Viewer3D viewer;
 	MyosotisCfg cfg;
 	MyosotisStats stat;
+	/* Derived */
 
 	/* Methods */
 	bool init(int width, int height);

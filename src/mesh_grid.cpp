@@ -407,6 +407,24 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 		child_count[i] = mg.get_children(pcoord, children[i]);
 	}
 
+	/* Compute max children error of all parents in block, shall
+	 * be used to saturate parent errors */
+	float saturated_err = 0;
+	for (uint32_t i = 0; i < 8; ++i) {
+		CellCoord pcoord = bcoord;
+		pcoord.x += (i >> 0) & 1;
+		pcoord.y += (i >> 1) & 1;
+		pcoord.z += (i >> 2) & 1;
+		for (int i = 0; i < 8; ++i) {
+			CellCoord ccoord = child_coord(pcoord, i);
+			uint32_t *p = mg.cell_table.get(ccoord);
+			if (p) {
+				saturated_err =
+				    MAX(mg.cell_errors[*p], saturated_err);
+			}
+		}
+	}
+
 	/* Compute vtx and idx counts prior to simplification */
 	uint32_t total_idx_count = 0;
 	uint32_t total_vtx_count = 0;
@@ -465,7 +483,7 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 	TArray<uint32_t> trash(blk_mesh.index_count);
 	float extent = mg.step * (1 << bcoord.lod);
 	float target_err = mg.err_tol * extent;
-	float actual_err;
+	float simplification_err;
 	float block_offset[3];
 	block_offset[0] = mg.base[0] + bcoord.x * extent;
 	block_offset[1] = mg.base[1] + bcoord.y * extent;
@@ -476,12 +494,14 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 	    trash.data, simp_remap.data, blk_data.indices, blk_mesh.index_count,
 	    (const float *)blk_data.positions, blk_mesh.vertex_count,
 	    3 * sizeof(float), blk_mesh.index_count / 4, target_err,
-	    &actual_err, block_extent, block_offset);
-	// printf("Actual error : %.5f (%6d Tris)\n", actual_err,
-	//        blk_mesh.index_count / 3);
+	    &simplification_err, block_extent, block_offset);
+
+	/* Update saturated_err */
+	saturated_err =
+	    MAX(0.5 * saturated_err,
+		simplification_err / (mg.step * (1 << (bcoord.lod))));
 
 	/* Update blk_mesh indices after simplification */
-
 	for (uint32_t k = 0; k < blk_mesh.index_count; k++) {
 		uint32_t *idx = blk_data.indices + blk_mesh.index_offset;
 		assert(idx[k] < blk_mesh.vertex_count);
@@ -490,7 +510,6 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 	}
 
 	/* Compose simp_remap and blk_remap */
-
 	for (uint32_t k = 0; k < total_vtx_count; k++) {
 		blk_remap[k] = simp_remap[blk_remap[k]];
 		assert(blk_remap[k] < blk_mesh.vertex_count);
@@ -516,7 +535,7 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 
 		Mesh pmesh{0, 0, 0, 0};
 
-		/* Cleat blk_table and split remap */
+		/* Clear blk_table and split remap */
 		blk_table.clear();
 		for (uint32_t l = 0; l < blk_mesh.vertex_count; ++l) {
 			split_remap[l] = ~0u;
@@ -580,7 +599,7 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 			mg.cell_table.set_at(pcoord, cell_idx);
 			mg.cells.push_back(pmesh);
 			mg.cell_coords.push_back(pcoord);
-			mg.cell_errors.push_back(actual_err);
+			mg.cell_errors.push_back(saturated_err);
 			mg.cell_counts[pcoord.lod]++;
 			mg.next_index_offset += pmesh.index_count;
 			mg.next_vertex_offset += pmesh.vertex_count;
@@ -677,16 +696,59 @@ void MeshGridBuilder::build_parent_cell(CellCoord pcoord)
 	}
 }
 
-void MeshGrid::select_cells_from_view_point(const Vec3 vp, float kappa,
-					    const float *pvm,
+enum Visibility MeshGrid::get_visibility(const float *pvm, CellCoord coord)
+{
+	Aabb bbox;
+	bbox.min.x = base.x + coord.x * step * (1 << coord.lod);
+	bbox.min.y = base.y + coord.y * step * (1 << coord.lod);
+	bbox.min.z = base.z + coord.z * step * (1 << coord.lod);
+	bbox.max.x = bbox.min.x + step * (1 << coord.lod);
+	bbox.max.y = bbox.min.y + step * (1 << coord.lod);
+	bbox.max.z = bbox.min.z + step * (1 << coord.lod);
+
+	return (visibility(bbox, pvm));
+}
+
+struct Candidate {
+	uint32_t idx;
+	uint32_t parent_idx;
+	bool check_visibility;
+};
+
+bool MeshGrid::cell_is_acceptable(const Vec3 &vp, uint32_t idx,
+				  bool continuous_lod, float error_multiplier)
+{
+
+	CellCoord coord = cell_coords[idx];
+	float kappa;
+
+	// printf("Ratio : %f\n", cell_errors[idx] / mean_relative_error);
+
+	Vec3 diff = (vp - base) * (1.f / (step * (1 << coord.lod)));
+	if (continuous_lod) {
+		diff.x -= coord.x + 0.5f;
+		diff.y -= coord.y + 0.5f;
+		diff.z -= coord.z + 0.5f;
+		kappa = error_multiplier * mean_relative_error;
+		kappa = kappa > 4 ? kappa : kappa;
+	} else {
+		CellCoord bcoord = block_base_coord(coord);
+		diff.x -= bcoord.x + 1.f;
+		diff.y -= bcoord.y + 1.f;
+		diff.z -= bcoord.z + 1.f;
+		kappa = error_multiplier * cell_errors[idx];
+	}
+
+	return (2 * norm(diff) / sqrt(3.f) > kappa);
+}
+
+void MeshGrid::select_cells_from_view_point(const Vec3 &vp,
+					    float error_multiplier,
+					    bool continuous_lod,
+					    bool frustum_cull, const float *pvm,
 					    TArray<uint32_t> &to_draw,
 					    TArray<uint32_t> &parents)
 {
-	struct Candidate {
-		uint32_t idx;
-		uint32_t parent_idx;
-		uint32_t check_visibility;
-	};
 
 	/* TODO avoid malloc in hot rendering loop */
 	TArray<Candidate> to_visit;
@@ -704,42 +766,45 @@ void MeshGrid::select_cells_from_view_point(const Vec3 vp, float kappa,
 		Candidate candi = to_visit[visited++];
 		CellCoord coord = cell_coords[candi.idx];
 
-		/* Frustum cull */
-		int visible = 1;
-		if (pvm && candi.check_visibility) {
-			Aabb bbox;
-			bbox.min.x = base.x + coord.x * step * (1 << coord.lod);
-			bbox.min.y = base.y + coord.y * step * (1 << coord.lod);
-			bbox.min.z = base.z + coord.z * step * (1 << coord.lod);
-			bbox.max.x = bbox.min.x + step * (1 << coord.lod);
-			bbox.max.y = bbox.min.y + step * (1 << coord.lod);
-			bbox.max.z = bbox.min.z + step * (1 << coord.lod);
-			visible = is_visible(bbox, pvm);
-			if (!visible)
+		/* Frustum */
+		enum Visibility vis = Visibility::Full;
+		if (frustum_cull && candi.check_visibility) {
+			vis = get_visibility(pvm, coord);
+			if (vis == Visibility::None)
 				continue;
 		}
 
-		/* Distance based LOD */
-		if (coord.lod == 0 || cell_view_ratio_d2(vp, coord) > kappa) {
+		/* No refinement possible */
+		if (coord.lod == 0) {
 			to_draw.push_back(candi.idx);
 			parents.push_back(candi.parent_idx);
-		} else {
-			uint32_t check_vis = visible != 2;
-			for (int i = 0; i < 8; ++i) {
-				CellCoord ccoord = child_coord(coord, i);
-				uint32_t *p = cell_table.get(ccoord);
-				if (p) {
-					to_visit.push_back(
-					    {*p, candi.idx, check_vis});
-				}
+			continue;
+		}
+
+		/* Sufficiently far or sufficiently low error */
+		if (cell_is_acceptable(vp, candi.idx, continuous_lod,
+				       error_multiplier)) {
+			to_draw.push_back(candi.idx);
+			parents.push_back(candi.parent_idx);
+			continue;
+		}
+
+		/* None of the previous -> refine */
+		bool check_vis = vis != Visibility::Full;
+		for (int i = 0; i < 8; ++i) {
+			CellCoord ccoord = child_coord(coord, i);
+			uint32_t *p = cell_table.get(ccoord);
+			if (p) {
+				to_visit.push_back({*p, candi.idx, check_vis});
 			}
 		}
 	}
 }
 
-/* Ratio between the distance from the view_point to the cell (i.e. closest
- * point, not the center of the cell), and the cell diameter, both distance and
- * diameter being understood for the d_\infty distance.
+/* Ratio between the distance from the view_point to the cell (i.e.
+ * closest point, not the center of the cell), and the cell diameter,
+ * both distance and diameter being understood for the d_\infty
+ * distance.
  */
 float MeshGrid::cell_view_ratio_dinf(Vec3 vp, CellCoord coord)
 {
@@ -757,9 +822,9 @@ float MeshGrid::cell_view_ratio_dinf(Vec3 vp, CellCoord coord)
 	return rat;
 }
 
-/* Ratio between the distance from the view_point to the cell center and the
- * cell radius, both distance and radius being understood for the euclidean
- * distance.
+/* Ratio between the distance from the view_point to the cell center and
+ * the cell radius, both distance and radius being understood for the
+ * euclidean distance.
  */
 float MeshGrid::cell_view_ratio_d2(Vec3 vp, CellCoord coord)
 {
@@ -777,13 +842,14 @@ void MeshGrid::compute_mean_relative_error()
 	uint32_t count = 0;
 	for (uint32_t l = 1; l < levels; ++l) {
 		for (uint32_t i = 0; i < cell_counts[l]; ++i) {
-			error +=
-			    cell_errors[cell_offsets[l] + i] / (1 << (l - 1));
+			error += cell_errors[cell_offsets[l] + i];
+			printf("Error at level %d : %f (%d tri)\n", l,
+			       cell_errors[cell_offsets[l] + i],
+			       cells[cell_offsets[l] + i].index_count / 3);
 			count += 1;
 		}
 	}
 	/* Take the mean */
 	error /= count;
-	/* Make it relative to the step */
-	mean_relative_error = error / step;
+	mean_relative_error = error;
 }
