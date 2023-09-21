@@ -7,7 +7,7 @@
 #include "imgui/imgui_impl_opengl3.h"
 
 #ifndef GL_GLEXT_PROTOTYPES
-	#define GL_GLEXT_PROTOTYPES 1
+#define GL_GLEXT_PROTOTYPES 1
 #endif
 #include <GL/gl.h>
 #include <GL/glext.h>
@@ -29,13 +29,11 @@
 #define TARGET_CELL_IDX_COUNT (1 << 16)
 #define ERR_TOL 0.01
 
-void syntax(char *argv[])
-{
+void syntax(char *argv[]) {
 	printf("Syntax : %s mesh_file_name [max_level]\n", argv[0]);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 	if (argc <= 1) {
 		syntax(argv);
 		return (EXIT_FAILURE);
@@ -265,20 +263,20 @@ int main(int argc, char **argv)
 		Mat4 proj = app.viewer.camera.view_to_clip();
 		Mat4 vm = app.viewer.camera.world_to_view();
 		Vec3 camera_pos = app.viewer.camera.get_position();
-		if (app.cfg.level > max_level)
-			app.cfg.level = max_level;
+		if (app.cfg.level > max_level) app.cfg.level = max_level;
 
 		/* Draw mesh */
 		if (app.cfg.adaptative_lod) {
-
 			/* Set kappa */
 
 			float error_multiplier =
-			    2 * app.viewer.width /
+			    4 * app.viewer.width /
 			    (app.cfg.pix_error *
 			     tan(app.cfg.camera_fov * PI / 360));
 
 			float kappa = error_multiplier * mg.mean_relative_error;
+			printf("Kappa : %f\r", kappa);
+			fflush(stdout);
 
 			if (!app.cfg.freeze_vp) {
 				Vec3 vp = app.viewer.camera.get_position();
