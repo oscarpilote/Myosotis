@@ -231,6 +231,11 @@ void MeshGrid::build_from_mesh(const MBuf &src, const Mesh &mesh,
 	data.vtx_attr = src.vtx_attr | VtxAttr::MAP;
 
 	init_from_mesh(src, mesh);
+
+	/* Hack : destroy init mesh here */
+	MBuf *hack = (MBuf *)&src;
+	hack->clear();
+
 	printf("Number of cells at level 0 : %d\n", cell_counts[0]);
 
 	MeshGridBuilder builder(*this, num_threads);
@@ -243,7 +248,17 @@ void MeshGrid::build_from_mesh(const MBuf &src, const Mesh &mesh,
 		       level, get_triangle_count(level),
 		       (float)get_triangle_count(level) /
 			   get_triangle_count(level - 1));
+		// printf("MEM : indices %zuMb vertices %zuMb\n",
+		//        data.idx_capacity * sizeof(*data.indices) / (1 << 20),
+		//        data.vtx_capacity *
+		//	   (sizeof(*data.positions) + sizeof(*data.normals) +
+		//	    sizeof(*data.remap)) /
+		//	   (1 << 20));
 	}
+	/* Shrink to fit */
+	data.reserve_indices(next_index_offset, true);
+	data.reserve_vertices(next_vertex_offset, true);
+
 	compute_mean_relative_error();
 	printf("Mean relative error : %f\n", mean_relative_error);
 }
@@ -612,6 +627,8 @@ void MeshGridBuilder::build_block(CellCoord bcoord)
 		copy_vertices(mg.data, pmesh.vertex_offset, pdata, 0,
 			      pmesh.vertex_count, 0);
 	}
+	blk_data.clear();
+	pdata.clear();
 }
 
 void MeshGridBuilder::build_parent_cell(CellCoord pcoord)
@@ -694,6 +711,8 @@ void MeshGridBuilder::build_parent_cell(CellCoord pcoord)
 		}
 		tmp_remap += children[i]->vertex_count;
 	}
+
+	tmp_data.clear();
 }
 
 enum Visibility MeshGrid::get_visibility(const float *pvm, CellCoord coord)
@@ -843,9 +862,9 @@ void MeshGrid::compute_mean_relative_error()
 	for (uint32_t l = 1; l < levels; ++l) {
 		for (uint32_t i = 0; i < cell_counts[l]; ++i) {
 			error += cell_errors[cell_offsets[l] + i];
-			printf("Error at level %d : %f (%d tri)\n", l,
+			/*printf("Error at level %d : %f (%d tri)\n", l,
 			       cell_errors[cell_offsets[l] + i],
-			       cells[cell_offsets[l] + i].index_count / 3);
+			       cells[cell_offsets[l] + i].index_count / 3);*/
 			count += 1;
 		}
 	}
